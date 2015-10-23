@@ -10,8 +10,6 @@
 </head>
 <body>
   <div class="the-data"></div>
-  <div class="blue"></div>
-
   <!-- bower:js -->
   <!-- endbower -->
 
@@ -19,38 +17,60 @@
   <script src="script.js"></script>
   <script>
 
-    d3.select("body").append("p").text("New paragraph!");
-
     d3.csv("data/chart.csv", function (data) {
+      var refugeeMax = data[data.length - 1].numRefugees;
+      var refugeeMin = data[0].numRefugees;
+
       d3.select(".the-data")
-        .selectAll("p")
+        .selectAll("div")
         .data(data)
         .enter()
-        .append("p")
-        .text(function(d) {
-          return "Date: " + d.date + ";  number of refugees:" + d.numRefugees;
+        .append("div")
+        .classed("bar", true)
+        // .text(function(d) {
+        //   return "Date: " + d.date + ";  number of refugees:" + d.numRefugees;
+        // })
+        .style("background-color", function (d) {
+          if (d.numRefugees <= 50000) {
+            return "green";
+          } else if (d.numRefugees > 50000 && d.numRefugees <= 200000) {
+            return "yellow";
+          } else if (d.numRefugees > 200000) {
+            return "red";
+          }
         })
+        .style("height", function (d) {
+          var percent = d.numRefugees / refugeeMax;
+          var barHeight = percent * 400;
+
+          return (barHeight + 10) + "px";
+        })
+        .append("p")
+        .classed("label", true)
+        .text(function (data) {
+          return data.date;
+        });
     })
 
     var data = {
 
     }
-
-    var margin = {top: 20, right: 10, bottom: 20, left: 10};
-    var width = 960 - margin.left - margin.right;
-    var height = 500 - margin.top - margin.bottom;
-    var svg = d3.select("body").append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // Feel free to change or delete any of the code you see!
-    svg.append("rect")
-      .attr({x: 100, y: 100, width: width-200, height: height-200})
-      .style({ fill: "#a72d1a"})
-      .transition().duration(3000).ease("bounce")
-      .style({ fill: "#5db9e3"})
+    //
+    // var margin = {top: 20, right: 10, bottom: 20, left: 10};
+    // var width = 960 - margin.left - margin.right;
+    // var height = 500 - margin.top - margin.bottom;
+    // var svg = d3.select("body").append("svg")
+    //   .attr("width", width + margin.left + margin.right)
+    //   .attr("height", height + margin.top + margin.bottom)
+    // .append("g")
+    //   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //
+    // // Feel free to change or delete any of the code you see!
+    // svg.append("rect")
+    //   .attr({x: 100, y: 100, width: width-200, height: height-200})
+    //   .style({ fill: "#a72d1a"})
+    //   .transition().duration(3000).ease("bounce")
+    //   .style({ fill: "#5db9e3"})
 
     console.log("you are now rocking with d3", d3);
   </script>
