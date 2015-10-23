@@ -38,11 +38,13 @@
         .append("div")
         .classed("bar", true)
         .style("background-color", function (d) {
-          if (d.numRefugees <= 50000) {
+          if (d.numRefugees <= 100000) {
             return "green";
-          } else if (d.numRefugees > 50000 && d.numRefugees <= 200000) {
+          } else if (d.numRefugees > 100000 && d.numRefugees <= 500000) {
             return "yellow";
-          } else if (d.numRefugees > 200000) {
+          } else if (d.numRefugees > 500000 && d.numRefugees <= 2000000) {
+            return "orange";
+          } else if (d.numRefugees > 2000000) {
             return "red";
           }
         })
