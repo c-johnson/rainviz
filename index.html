@@ -9,6 +9,7 @@
 
 </head>
 <body>
+  <h1>Number of Syrian refugees since 2012</h1>
   <div class="the-data"></div>
   <!-- bower:js -->
   <!-- endbower -->
@@ -26,10 +27,11 @@
         .data(data)
         .enter()
         .append("div")
+        .classed("data-row", true)
+
+      d3.selectAll(".data-row")
+        .append("div")
         .classed("bar", true)
-        // .text(function(d) {
-        //   return "Date: " + d.date + ";  number of refugees:" + d.numRefugees;
-        // })
         .style("background-color", function (d) {
           if (d.numRefugees <= 50000) {
             return "green";
@@ -41,37 +43,29 @@
         })
         .style("height", function (d) {
           var percent = d.numRefugees / refugeeMax;
-          var barHeight = percent * 400;
+          var barHeight = percent * 250;
 
           return (barHeight + 10) + "px";
         })
+
+      d3.selectAll(".data-row")
         .append("p")
         .classed("label", true)
         .text(function (data) {
           return data.date;
         });
+
+
+        // .classed("bar", true)
+        // // .text(function(d) {
+        // //   return "Date: " + d.date + ";  number of refugees:" + d.numRefugees;
+        // // })
+        // .append("p")
+        // .classed("label", true)
+        // .text(function (data) {
+        //   return data.date;
+        // });
     })
-
-    var data = {
-
-    }
-    //
-    // var margin = {top: 20, right: 10, bottom: 20, left: 10};
-    // var width = 960 - margin.left - margin.right;
-    // var height = 500 - margin.top - margin.bottom;
-    // var svg = d3.select("body").append("svg")
-    //   .attr("width", width + margin.left + margin.right)
-    //   .attr("height", height + margin.top + margin.bottom)
-    // .append("g")
-    //   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    //
-    // // Feel free to change or delete any of the code you see!
-    // svg.append("rect")
-    //   .attr({x: 100, y: 100, width: width-200, height: height-200})
-    //   .style({ fill: "#a72d1a"})
-    //   .transition().duration(3000).ease("bounce")
-    //   .style({ fill: "#5db9e3"})
-
     console.log("you are now rocking with d3", d3);
   </script>
 </body>
