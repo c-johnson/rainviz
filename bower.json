@@ -2,7 +2,9 @@
   "name": "d3-block",
   "version": "0.0.1",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "d3-tip": "~0.6.7"
+  },
   "devDependencies": {
     "d3": "~3.5.6"
   }

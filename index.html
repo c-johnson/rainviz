@@ -12,6 +12,7 @@
   <h1>Number of Syrian refugees since 2012</h1>
   <div class="the-data"></div>
   <!-- bower:js -->
+  <script src="bower_components/d3-tip/index.js"></script>
   <!-- endbower -->
 
   <script src="bower_components/d3/d3.js"></script>
@@ -21,6 +22,10 @@
     d3.csv("data/chart.csv", function (data) {
       var refugeeMax = data[data.length - 1].numRefugees;
       var refugeeMin = data[0].numRefugees;
+
+      var div = d3.select(".the-data").append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);
 
       d3.select(".the-data")
         .selectAll("div")
@@ -47,6 +52,19 @@
 
           return (barHeight + 10) + "px";
         })
+        .on("mouseover", function(d) {
+            div.transition()
+                .duration(0)
+                .style("opacity", .9);
+            div .html(d.numRefugees + "<br/>" + "refugees")
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+        .on("mouseout", function(d) {
+            div.transition()
+                .duration(0)
+                .style("opacity", 0);
+        });
 
       d3.selectAll(".data-row")
         .append("p")
