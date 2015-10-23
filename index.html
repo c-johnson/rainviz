@@ -9,6 +9,7 @@
 
 </head>
 <body>
+  <div class="the-data"></div>
   <div class="blue"></div>
 
   <!-- bower:js -->
@@ -17,6 +18,24 @@
   <script src="bower_components/d3/d3.js"></script>
   <script src="script.js"></script>
   <script>
+
+    d3.select("body").append("p").text("New paragraph!");
+
+    d3.csv("data/chart.csv", function (data) {
+      d3.select(".the-data")
+        .selectAll("p")
+        .data(data)
+        .enter()
+        .append("p")
+        .text(function(d) {
+          return "Date: " + d.date + ";  number of refugees:" + d.numRefugees;
+        })
+    })
+
+    var data = {
+
+    }
+
     var margin = {top: 20, right: 10, bottom: 20, left: 10};
     var width = 960 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
