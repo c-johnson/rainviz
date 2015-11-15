@@ -1,0 +1,11 @@
+{
+  "name": "rainviz",
+  "start": {
+    "dir": "/Users/mmchris/proj/rainviz",
+    "hangs": [
+      "gulp"
+    ],
+    "nohangs": [
+    ]
+  }
+}
