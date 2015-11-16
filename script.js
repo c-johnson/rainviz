@@ -11,21 +11,21 @@ RainThing = (function() {
       var caliPath, canvas, context, gJson, geoCali, height, projection, width;
       width = 960;
       height = 500;
-      canvas = d3.select("body").append("canvas").attr("width", width).attr("height", height);
+      canvas = d3.select("body").append("canvas").attr("width", width).attr("height", height).attr("style", "border: 1px solid black;");
       geoCali = new GeoPolygon(_.map(data, function(dat) {
-        return {
-          lat: parseFloat(dat.lat),
-          long: parseFloat(dat.long)
-        };
+        return [parseFloat(dat.lat), parseFloat(dat.long)];
       }));
       window.Cali = geoCali;
       gJson = geoCali.geoJson;
       projection = d3.geo.albers().scale(1000);
       context = canvas.node().getContext("2d");
-      caliPath = d3.geo.path(gJson.features[0]).projection(projection).context(context);
-      gJson.features[0].bbox = gJson.bounds;
+      caliPath = d3.geo.path().projection(projection).context(context);
+      gJson.bbox = gJson.features[0].bbox = gJson.bounds;
       caliPath(topojson.feature(gJson, gJson.features[0]));
-      return context.stroke();
+      context.fillStyle = '#333';
+      context.stroke();
+      drawer = new CanvasDrawer;
+      return drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context);
     });
   };
 
@@ -73,13 +73,14 @@ GeoPolygon = (function() {
     this.updateCoords = bind(this.updateCoords, this);
     this.geoJson = {
       "type": "FeatureCollection",
+      "bbox": [],
       "features": [
         {
           "type": "Feature",
-          "bounds": [],
+          "bbox": [],
           "geometry": {
             "type": "Polygon",
-            "coordinates": coords
+            "coordinates": [coords]
           }
         }
       ]
@@ -96,14 +97,14 @@ GeoPolygon = (function() {
     var bounds, feature, k, lat, len, long, newCoord, ref, ref1, results;
     if (feature = (ref = this.geoJson) != null ? ref.features[ind] : void 0) {
       if ((ref1 = feature.geometry) != null) {
-        ref1.coordinates = newCoords;
+        ref1.coordinates = [newCoords];
       }
       this.geoJson.bounds = bounds = [[], []];
       results = [];
       for (k = 0, len = newCoords.length; k < len; k++) {
         newCoord = newCoords[k];
-        long = newCoord.long;
-        lat = newCoord.lat;
+        long = newCoord[0];
+        lat = newCoord[1];
         bounds[0][0] = bounds.xMin = bounds.xMin < long ? bounds.xMin : long;
         bounds[1][0] = bounds.xMax = bounds.xMax > long ? bounds.xMax : long;
         bounds[1][1] = bounds.yMin = bounds.yMin < lat ? bounds.yMin : lat;
@@ -131,15 +132,11 @@ GeoPolygon = (function() {
 })();
 
 CanvasDrawer = (function() {
-  function CanvasDrawer() {
-    this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext("2d");
-  }
+  function CanvasDrawer() {}
 
-  CanvasDrawer.prototype.drawCanvasThing = function(width, height, bounds, data) {
-    var canvas, context, coords, i, j, latitude, longitude, point, scale, xScale, yScale;
-    canvas = this.canvas;
-    context = void 0;
+  CanvasDrawer.prototype.drawCanvasThing = function(width, height, bounds, data, context) {
+    var coords, i, j, latitude, longitude, point, scale, xScale, yScale;
+    context.fillStyle = '#333';
     coords = void 0;
     point = void 0;
     latitude = void 0;
@@ -147,8 +144,6 @@ CanvasDrawer = (function() {
     xScale = void 0;
     yScale = void 0;
     scale = void 0;
-    context = canvas.getContext('2d');
-    context.fillStyle = '#333';
     xScale = width / Math.abs(bounds.xMax - bounds.xMin);
     yScale = height / Math.abs(bounds.yMax - bounds.yMin);
     scale = xScale < yScale ? xScale : yScale;
@@ -165,14 +160,14 @@ CanvasDrawer = (function() {
           y: (bounds.yMax - latitude) * scale
         };
         if (j === 0) {
-          this.context.beginPath();
-          this.context.moveTo(point.x, point.y);
+          context.beginPath();
+          context.moveTo(point.x, point.y);
         } else {
-          this.context.lineTo(point.x, point.y);
+          context.lineTo(point.x, point.y);
         }
         j++;
       }
-      this.context.fill();
+      context.fill();
       i++;
     }
   };

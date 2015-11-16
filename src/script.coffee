@@ -11,8 +11,9 @@ class RainThing
       canvas = d3.select("body").append("canvas")
         .attr("width", width)
         .attr("height", height)
+        .attr("style", "border: 1px solid black;")
 
-      geoCali = new GeoPolygon(_.map data, (dat) -> {lat: parseFloat(dat.lat), long: parseFloat(dat.long)})
+      geoCali = new GeoPolygon(_.map data, (dat) -> [parseFloat(dat.lat), parseFloat(dat.long)])
       window.Cali = geoCali
       gJson = geoCali.geoJson
 
@@ -21,15 +22,20 @@ class RainThing
 
       context = canvas.node().getContext("2d")
 
-      caliPath = d3.geo.path(gJson.features[0])
+      caliPath = d3.geo.path()
         .projection(projection)
         .context(context)
 
-      gJson.features[0].bbox = gJson.bounds
+      gJson.bbox = gJson.features[0].bbox = gJson.bounds
+
       caliPath(topojson.feature(gJson, gJson.features[0]))
 
       # caliPath(topojson.feature(us, us.objects.counties));
+      context.fillStyle = '#333';
       context.stroke()
+
+      drawer = new CanvasDrawer
+      drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
 
       # b_canvas = document.getElementById("calicanvas")
       # b_context = b_canvas.getContext("2d");
@@ -77,12 +83,13 @@ class GeoPolygon
   constructor: (coords) ->
     @geoJson =
       "type": "FeatureCollection"
+      "bbox": []
       "features": [{
         "type": "Feature"
-        "bounds": []
+        "bbox": []
         "geometry":
           "type": "Polygon"
-          "coordinates": coords
+          "coordinates": [coords]
     }]
 
     @updateCoords(coords)
@@ -92,14 +99,14 @@ class GeoPolygon
 
   updateFeature: (ind, newCoords) ->
     if feature = @geoJson?.features[ind]
-      feature.geometry?.coordinates = newCoords
+      feature.geometry?.coordinates = [newCoords]
       @geoJson.bounds = bounds = [[], []]
                         #left, top, right, bottom
       # @geoJson.bounds = [[10, 10], [50, 80]]
 
       for newCoord in newCoords
-        long = newCoord.long
-        lat = newCoord.lat
+        long = newCoord[0]
+        lat = newCoord[1]
 
         bounds[0][0] = bounds.xMin = if bounds.xMin < long then bounds.xMin else long
         bounds[1][0] = bounds.xMax = if bounds.xMax > long then bounds.xMax else long
@@ -113,13 +120,8 @@ class GeoPolygon
         @updateFeature(i, newCoords)
 
 class CanvasDrawer
-  constructor: () ->
-    @canvas = document.createElement('canvas')
-    @context = @canvas.getContext("2d")
-
-  drawCanvasThing: (width, height, bounds, data) ->
-    canvas = @canvas
-    context = undefined
+  drawCanvasThing: (width, height, bounds, data, context) ->
+    context.fillStyle = '#333'
     coords = undefined
     point = undefined
     latitude = undefined
@@ -127,11 +129,6 @@ class CanvasDrawer
     xScale = undefined
     yScale = undefined
     scale = undefined
-    # Get the drawing context from our <canvas> and
-    # set the fill to determine what color our map will be.
-    context = canvas.getContext('2d')
-    context.fillStyle = '#333'
-    # Determine how much to scale our coordinates by
     xScale = width / Math.abs(bounds.xMax - (bounds.xMin))
     yScale = height / Math.abs(bounds.yMax - (bounds.yMin))
     scale = if xScale < yScale then xScale else yScale
@@ -155,14 +152,14 @@ class CanvasDrawer
           y: (bounds.yMax - latitude) * scale
         # If this is the first coordinate in a shape, start a new path
         if j == 0
-          @context.beginPath()
-          @context.moveTo point.x, point.y
+          context.beginPath()
+          context.moveTo point.x, point.y
           # Otherwise just keep drawing
         else
-          @context.lineTo point.x, point.y
+          context.lineTo point.x, point.y
         j++
       # Fill the path we just finished drawing with color
-      @context.fill()
+      context.fill()
       i++
     return
 
