@@ -1,87 +1,31 @@
-var GeoPolygon, RainThing, thing,
+var CanvasDrawer, GeoPolygon, RainThing, thing,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-GeoPolygon = (function() {
-  function GeoPolygon(coords) {
-    this.updateCoords = bind(this.updateCoords, this);
-    this.geoJson = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "bounds": [],
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": coords
-          }
-        }
-      ]
-    };
-    this.updateCoords(coords);
-  }
-
-  GeoPolygon.prototype.fLen = function() {
-    var ref, ref1;
-    return (ref = this.geoJson) != null ? (ref1 = ref.features) != null ? ref1.length : void 0 : void 0;
-  };
-
-  GeoPolygon.prototype.updateFeature = function(ind, newCoords) {
-    var bounds, feature, j, lat, len, long, newCoord, ref, ref1, results;
-    if (feature = (ref = this.geoJson) != null ? ref.features[ind] : void 0) {
-      if ((ref1 = feature.geometry) != null) {
-        ref1.coordinates = newCoords;
-      }
-      feature.bounds = bounds = {};
-      results = [];
-      for (j = 0, len = newCoords.length; j < len; j++) {
-        newCoord = newCoords[j];
-        long = newCoord.long;
-        lat = newCoord.lat;
-        bounds.xMin = bounds.xMin < long ? bounds.xMin : long;
-        bounds.xMax = bounds.xMax > long ? bounds.xMax : long;
-        bounds.yMin = bounds.yMin < lat ? bounds.yMin : lat;
-        results.push(bounds.yMax = bounds.yMax > lat ? bounds.yMax : lat);
-      }
-      return results;
-    }
-  };
-
-  GeoPolygon.prototype.updateCoords = function(newCoords, index) {
-    var i, j, ref, results;
-    if (index) {
-      return this.updateFeature(index, newCoords);
-    } else {
-      results = [];
-      for (i = j = 0, ref = this.fLen(); 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-        results.push(this.updateFeature(i, newCoords));
-      }
-      return results;
-    }
-  };
-
-  return GeoPolygon;
-
-})();
 
 RainThing = (function() {
   function RainThing() {
-    this.californication();
+    this.californication(new CanvasDrawer);
   }
 
-  RainThing.prototype.californication = function() {
+  RainThing.prototype.californication = function(drawer) {
     return d3.csv('data/cal-boundary.csv', function(data) {
-      var div, geoCali, projection;
+      var caliPath, canvas, context, gJson, geoCali, height, projection, width;
+      width = 960;
+      height = 500;
+      canvas = d3.select("body").append("canvas").attr("width", width).attr("height", height);
       geoCali = new GeoPolygon(_.map(data, function(dat) {
         return {
-          lat: dat.lat,
-          long: dat.long
+          lat: parseFloat(dat.lat),
+          long: parseFloat(dat.long)
         };
       }));
       window.Cali = geoCali;
-      projection = d3.geo.albersUsa();
-      return div = d3.select('#california').append('svg').append("circle").attr("r", 5).attr("transform", function() {
-        return "translate(" + projection([-75, 43]) + ")";
-      });
+      gJson = geoCali.geoJson;
+      projection = d3.geo.albers().scale(1000);
+      context = canvas.node().getContext("2d");
+      caliPath = d3.geo.path(gJson.features[0]).projection(projection).context(context);
+      gJson.features[0].bbox = gJson.bounds;
+      caliPath(topojson.feature(gJson, gJson.features[0]));
+      return context.stroke();
     });
   };
 
@@ -121,6 +65,119 @@ RainThing = (function() {
   };
 
   return RainThing;
+
+})();
+
+GeoPolygon = (function() {
+  function GeoPolygon(coords) {
+    this.updateCoords = bind(this.updateCoords, this);
+    this.geoJson = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "bounds": [],
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": coords
+          }
+        }
+      ]
+    };
+    this.updateCoords(coords);
+  }
+
+  GeoPolygon.prototype.fLen = function() {
+    var ref, ref1;
+    return (ref = this.geoJson) != null ? (ref1 = ref.features) != null ? ref1.length : void 0 : void 0;
+  };
+
+  GeoPolygon.prototype.updateFeature = function(ind, newCoords) {
+    var bounds, feature, k, lat, len, long, newCoord, ref, ref1, results;
+    if (feature = (ref = this.geoJson) != null ? ref.features[ind] : void 0) {
+      if ((ref1 = feature.geometry) != null) {
+        ref1.coordinates = newCoords;
+      }
+      this.geoJson.bounds = bounds = [[], []];
+      results = [];
+      for (k = 0, len = newCoords.length; k < len; k++) {
+        newCoord = newCoords[k];
+        long = newCoord.long;
+        lat = newCoord.lat;
+        bounds[0][0] = bounds.xMin = bounds.xMin < long ? bounds.xMin : long;
+        bounds[1][0] = bounds.xMax = bounds.xMax > long ? bounds.xMax : long;
+        bounds[1][1] = bounds.yMin = bounds.yMin < lat ? bounds.yMin : lat;
+        results.push(bounds[0][1] = bounds.yMax = bounds.yMax > lat ? bounds.yMax : lat);
+      }
+      return results;
+    }
+  };
+
+  GeoPolygon.prototype.updateCoords = function(newCoords, index) {
+    var i, k, ref, results;
+    if (index) {
+      return this.updateFeature(index, newCoords);
+    } else {
+      results = [];
+      for (i = k = 0, ref = this.fLen(); 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
+        results.push(this.updateFeature(i, newCoords));
+      }
+      return results;
+    }
+  };
+
+  return GeoPolygon;
+
+})();
+
+CanvasDrawer = (function() {
+  function CanvasDrawer() {
+    this.canvas = document.createElement('canvas');
+    this.context = this.canvas.getContext("2d");
+  }
+
+  CanvasDrawer.prototype.drawCanvasThing = function(width, height, bounds, data) {
+    var canvas, context, coords, i, j, latitude, longitude, point, scale, xScale, yScale;
+    canvas = this.canvas;
+    context = void 0;
+    coords = void 0;
+    point = void 0;
+    latitude = void 0;
+    longitude = void 0;
+    xScale = void 0;
+    yScale = void 0;
+    scale = void 0;
+    context = canvas.getContext('2d');
+    context.fillStyle = '#333';
+    xScale = width / Math.abs(bounds.xMax - bounds.xMin);
+    yScale = height / Math.abs(bounds.yMax - bounds.yMin);
+    scale = xScale < yScale ? xScale : yScale;
+    data = data.features;
+    i = 0;
+    while (i < data.length) {
+      coords = data[i].geometry.coordinates[0];
+      j = 0;
+      while (j < coords.length) {
+        longitude = coords[j][0];
+        latitude = coords[j][1];
+        point = {
+          x: (longitude - bounds.xMin) * scale,
+          y: (bounds.yMax - latitude) * scale
+        };
+        if (j === 0) {
+          this.context.beginPath();
+          this.context.moveTo(point.x, point.y);
+        } else {
+          this.context.lineTo(point.x, point.y);
+        }
+        j++;
+      }
+      this.context.fill();
+      i++;
+    }
+  };
+
+  return CanvasDrawer;
 
 })();
 
