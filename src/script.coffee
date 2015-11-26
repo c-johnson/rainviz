@@ -3,6 +3,7 @@ class RainThing
     @width = 960
     @height = 1160
     @californication2()
+    # @californication()
     # @refugeeChart()
 
   # type:  "svg" or "canvas"
@@ -14,15 +15,37 @@ class RainThing
 
     return display
 
-  californication2: () ->
+  usaify: () ->
     svg = @makeDisplay("svg")
 
-    # d3.json 'data/USA-california.json', (geoUSA) =>
     d3.json 'data/USA-states.json', (geoUSA) =>
 
       projection = d3.geo.albersUsa()
         .scale(1000)
         .translate([@width / 2, @height / 2]);
+
+      usaPath = d3.geo.path(geoUSA)
+        .projection(projection)
+
+      svg.append("path")
+          .datum(geoUSA)
+          .attr("d", usaPath);
+
+      svg.selectAll(".subunit")
+          .data(geoUSA.features)
+        .enter().append("path")
+          .attr "class", (d) -> return "subunit-" + d.properties.NAME
+          .attr("d", usaPath);
+
+  californication2: () ->
+    svg = @makeDisplay("svg")
+
+    d3.json 'data/USA-california.json', (geoUSA) =>
+
+      projection = d3.geo.albersUsa()
+        .scale(3500)
+        # .translate([@width / 2, @height / 2])
+        .translate([1600, 400])
 
       usaPath = d3.geo.path(geoUSA)
         .projection(projection)

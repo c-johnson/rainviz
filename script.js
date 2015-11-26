@@ -14,13 +14,29 @@ RainThing = (function() {
     return display;
   };
 
-  RainThing.prototype.californication2 = function() {
+  RainThing.prototype.usaify = function() {
     var svg;
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-states.json', (function(_this) {
       return function(geoUSA) {
         var projection, usaPath;
         projection = d3.geo.albersUsa().scale(1000).translate([_this.width / 2, _this.height / 2]);
+        usaPath = d3.geo.path(geoUSA).projection(projection);
+        svg.append("path").datum(geoUSA).attr("d", usaPath);
+        return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
+          return "subunit-" + d.properties.NAME;
+        }).attr("d", usaPath);
+      };
+    })(this));
+  };
+
+  RainThing.prototype.californication2 = function() {
+    var svg;
+    svg = this.makeDisplay("svg");
+    return d3.json('data/USA-california.json', (function(_this) {
+      return function(geoUSA) {
+        var projection, usaPath;
+        projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
         usaPath = d3.geo.path(geoUSA).projection(projection);
         svg.append("path").datum(geoUSA).attr("d", usaPath);
         return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
