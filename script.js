@@ -1,16 +1,16 @@
-var CanvasDrawer, GeoPolygon, RainThing, SvgDrawer, thing,
+var CanvasDrawer, GeoPolygon, RainThing, thing,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 RainThing = (function() {
   function RainThing() {
+    this.width = 960;
+    this.height = 1160;
     this.californication2();
   }
 
   RainThing.prototype.makeDisplay = function(type) {
-    var display, height, width;
-    width = 960;
-    height = 1160;
-    display = d3.select("body").append(type).attr("width", width).attr("height", height).attr("style", "border: 1px solid black;");
+    var display;
+    display = d3.select("body").append(type).attr("width", this.width).attr("height", this.height).attr("style", "border: 1px solid black;");
     return display;
   };
 
@@ -20,9 +20,9 @@ RainThing = (function() {
     return d3.json('data/USA-states.json', (function(_this) {
       return function(geoUSA) {
         var projection, usaPath;
-        projection = d3.geo.albersUsa().scale(1000);
-        usaPath = d3.geo.path(geoUSA);
-        return svg.append("path").datum(geoUSA).attr("d", d3.geo.path(geoUSA).projection(d3.geo.mercator()));
+        projection = d3.geo.albersUsa().scale(1000).translate([_this.width / 2, _this.height / 2]);
+        usaPath = d3.geo.path(geoUSA).projection(projection);
+        return svg.append("path").datum(geoUSA).attr("d", usaPath);
       };
     })(this));
   };
@@ -192,15 +192,6 @@ CanvasDrawer = (function() {
   };
 
   return CanvasDrawer;
-
-})();
-
-SvgDrawer = (function() {
-  function SvgDrawer() {}
-
-  SvgDrawer.prototype.drawThing = function() {};
-
-  return SvgDrawer;
 
 })();
 

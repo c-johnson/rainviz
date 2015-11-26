@@ -1,40 +1,34 @@
 class RainThing
   constructor: () ->
+    @width = 960
+    @height = 1160
     @californication2()
     # @refugeeChart()
 
   # type:  "svg" or "canvas"
   makeDisplay: (type) ->
-    width = 960
-    height = 1160
-
     display = d3.select("body").append(type)
-      .attr("width", width)
-      .attr("height", height)
+      .attr("width", @width)
+      .attr("height", @height)
       .attr("style", "border: 1px solid black;")
 
     return display
 
   californication2: () ->
     svg = @makeDisplay("svg")
-    # context = canvas.node().getContext("2d")
 
     d3.json 'data/USA-states.json', (geoUSA) =>
+
       projection = d3.geo.albersUsa()
         .scale(1000)
+        .translate([@width / 2, @height / 2]);
 
       usaPath = d3.geo.path(geoUSA)
-        # .context(context)
-        # .projection(projection)
+        .projection(projection)
 
       svg.append("path")
           .datum(geoUSA)
-          .attr("d", d3.geo.path(geoUSA).projection(d3.geo.mercator()));
-
-      # drawer = new CanvasDrawer
-      # drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
-
-      # geoUSA
+          .attr("d", usaPath);
 
   californication: () ->
     d3.csv 'data/cal-boundary.csv', (data) =>
@@ -192,8 +186,5 @@ class CanvasDrawer
       context.stroke()
       i++
     return
-
-class SvgDrawer
-  drawThing: () ->
 
 thing = new RainThing
