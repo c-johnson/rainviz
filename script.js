@@ -35,6 +35,7 @@ RainThing = (function() {
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoUSA) {
+        debugger;
         var projection, usaPath;
         projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
         usaPath = d3.geo.path(geoUSA).projection(projection);

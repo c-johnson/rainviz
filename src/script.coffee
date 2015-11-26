@@ -42,9 +42,10 @@ class RainThing
 
     d3.json 'data/USA-california.json', (geoUSA) =>
 
+      debugger
+
       projection = d3.geo.albersUsa()
         .scale(3500)
-        # .translate([@width / 2, @height / 2])
         .translate([1600, 400])
 
       usaPath = d3.geo.path(geoUSA)
