@@ -2,9 +2,10 @@ class RainThing
   constructor: () ->
     @width = 960
     @height = 1160
-    @californication2()
-    # @californication()
+    @californication()
+    # @usaify()
     # @refugeeChart()
+    # @derpyCal()
 
   # type:  "svg" or "canvas"
   makeDisplay: (type) ->
@@ -22,7 +23,7 @@ class RainThing
 
       projection = d3.geo.albersUsa()
         .scale(1000)
-        .translate([@width / 2, @height / 2]);
+        .translate([@width / 2, @height / 2])
 
       usaPath = d3.geo.path(geoUSA)
         .projection(projection)
@@ -37,13 +38,10 @@ class RainThing
           .attr "class", (d) -> return "subunit-" + d.properties.NAME
           .attr("d", usaPath);
 
-  californication2: () ->
+  californication: () ->
     svg = @makeDisplay("svg")
 
     d3.json 'data/USA-california.json', (geoUSA) =>
-
-      debugger
-
       projection = d3.geo.albersUsa()
         .scale(3500)
         .translate([1600, 400])
@@ -62,7 +60,7 @@ class RainThing
           .attr("d", usaPath);
 
 
-  californication: () ->
+  derpyCal: () ->
     d3.csv 'data/cal-boundary.csv', (data) =>
       canvas = @makeDisplay("canvas")
       geoCali = new GeoPolygon(_.map data, (dat) -> [parseFloat(dat.lat), parseFloat(dat.long)])

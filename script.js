@@ -5,7 +5,7 @@ RainThing = (function() {
   function RainThing() {
     this.width = 960;
     this.height = 1160;
-    this.californication2();
+    this.californication();
   }
 
   RainThing.prototype.makeDisplay = function(type) {
@@ -30,12 +30,11 @@ RainThing = (function() {
     })(this));
   };
 
-  RainThing.prototype.californication2 = function() {
+  RainThing.prototype.californication = function() {
     var svg;
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoUSA) {
-        debugger;
         var projection, usaPath;
         projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
         usaPath = d3.geo.path(geoUSA).projection(projection);
@@ -47,7 +46,7 @@ RainThing = (function() {
     })(this));
   };
 
-  RainThing.prototype.californication = function() {
+  RainThing.prototype.derpyCal = function() {
     return d3.csv('data/cal-boundary.csv', (function(_this) {
       return function(data) {
         var caliPath, canvas, context, drawer, gJson, geoCali, projection;

@@ -39,8 +39,12 @@
   border: 0px;
   pointer-events: none; }
 
+[class*="subunit"] {
+  fill: none; }
+
 .subunit-California {
-  fill: #ddc; }
+  fill: #ddc;
+  stroke: red; }
 
 .subunit-SOME_POINT {
-  fill: red; }
+  fill: blue; }
