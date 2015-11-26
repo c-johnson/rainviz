@@ -1,32 +1,51 @@
-var CanvasDrawer, GeoPolygon, RainThing, thing,
+var CanvasDrawer, GeoPolygon, RainThing, SvgDrawer, thing,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 RainThing = (function() {
   function RainThing() {
-    this.californication(new CanvasDrawer);
+    this.californication2();
   }
 
-  RainThing.prototype.californication = function(drawer) {
-    return d3.csv('data/cal-boundary.csv', function(data) {
-      var caliPath, canvas, context, gJson, geoCali, height, projection, width;
-      width = 960;
-      height = 500;
-      canvas = d3.select("body").append("canvas").attr("width", width).attr("height", height).attr("style", "border: 1px solid black;");
-      geoCali = new GeoPolygon(_.map(data, function(dat) {
-        return [parseFloat(dat.lat), parseFloat(dat.long)];
-      }));
-      window.Cali = geoCali;
-      gJson = geoCali.geoJson;
-      projection = d3.geo.albers().scale(1000);
-      context = canvas.node().getContext("2d");
-      caliPath = d3.geo.path().projection(projection).context(context);
-      gJson.bbox = gJson.features[0].bbox = gJson.bounds;
-      caliPath(topojson.feature(gJson, gJson.features[0]));
-      context.fillStyle = '#333';
-      context.stroke();
-      drawer = new CanvasDrawer;
-      return drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context);
-    });
+  RainThing.prototype.makeDisplay = function(type) {
+    var display, height, width;
+    width = 960;
+    height = 1160;
+    display = d3.select("body").append(type).attr("width", width).attr("height", height).attr("style", "border: 1px solid black;");
+    return display;
+  };
+
+  RainThing.prototype.californication2 = function() {
+    var svg;
+    svg = this.makeDisplay("svg");
+    return d3.json('data/USA-states.json', (function(_this) {
+      return function(geoUSA) {
+        var projection, usaPath;
+        projection = d3.geo.albersUsa().scale(1000);
+        usaPath = d3.geo.path(geoUSA);
+        return svg.append("path").datum(geoUSA).attr("d", d3.geo.path(geoUSA).projection(d3.geo.mercator()));
+      };
+    })(this));
+  };
+
+  RainThing.prototype.californication = function() {
+    return d3.csv('data/cal-boundary.csv', (function(_this) {
+      return function(data) {
+        var caliPath, canvas, context, drawer, gJson, geoCali, projection;
+        canvas = _this.makeDisplay("canvas");
+        geoCali = new GeoPolygon(_.map(data, function(dat) {
+          return [parseFloat(dat.lat), parseFloat(dat.long)];
+        }));
+        window.Cali = geoCali;
+        gJson = geoCali.geoJson;
+        projection = d3.geo.albersUsa().scale(1000);
+        context = canvas.node().getContext("2d");
+        caliPath = d3.geo.path().projection(projection).context(context);
+        gJson.bbox = gJson.features[0].bbox = gJson.bounds;
+        caliPath(topojson.feature(gJson, gJson.features[0]));
+        drawer = new CanvasDrawer;
+        return drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context);
+      };
+    })(this));
   };
 
   RainThing.prototype.refugeeChart = function() {
@@ -136,7 +155,7 @@ CanvasDrawer = (function() {
 
   CanvasDrawer.prototype.drawCanvasThing = function(width, height, bounds, data, context) {
     var coords, i, j, latitude, longitude, point, scale, xScale, yScale;
-    context.fillStyle = '#333';
+    context.fillStyle = '#FF0000';
     coords = void 0;
     point = void 0;
     latitude = void 0;
@@ -167,12 +186,21 @@ CanvasDrawer = (function() {
         }
         j++;
       }
-      context.fill();
+      context.stroke();
       i++;
     }
   };
 
   return CanvasDrawer;
+
+})();
+
+SvgDrawer = (function() {
+  function SvgDrawer() {}
+
+  SvgDrawer.prototype.drawThing = function() {};
+
+  return SvgDrawer;
 
 })();
 

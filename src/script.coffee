@@ -1,23 +1,49 @@
 class RainThing
   constructor: () ->
-    @californication(new CanvasDrawer)
+    @californication2()
     # @refugeeChart()
 
-  californication: (drawer) ->
-    d3.csv 'data/cal-boundary.csv', (data) ->
-      width = 960
-      height = 500
+  # type:  "svg" or "canvas"
+  makeDisplay: (type) ->
+    width = 960
+    height = 1160
 
-      canvas = d3.select("body").append("canvas")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("style", "border: 1px solid black;")
+    display = d3.select("body").append(type)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("style", "border: 1px solid black;")
 
+    return display
+
+  californication2: () ->
+    svg = @makeDisplay("svg")
+    # context = canvas.node().getContext("2d")
+
+    d3.json 'data/USA-states.json', (geoUSA) =>
+      projection = d3.geo.albersUsa()
+        .scale(1000)
+
+      usaPath = d3.geo.path(geoUSA)
+        # .context(context)
+        # .projection(projection)
+
+      svg.append("path")
+          .datum(geoUSA)
+          .attr("d", d3.geo.path(geoUSA).projection(d3.geo.mercator()));
+
+      # drawer = new CanvasDrawer
+      # drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
+
+      # geoUSA
+
+  californication: () ->
+    d3.csv 'data/cal-boundary.csv', (data) =>
+      canvas = @makeDisplay("canvas")
       geoCali = new GeoPolygon(_.map data, (dat) -> [parseFloat(dat.lat), parseFloat(dat.long)])
       window.Cali = geoCali
       gJson = geoCali.geoJson
 
-      projection = d3.geo.albers()
+      projection = d3.geo.albersUsa()
         .scale(1000)
 
       context = canvas.node().getContext("2d")
@@ -31,11 +57,15 @@ class RainThing
       caliPath(topojson.feature(gJson, gJson.features[0]))
 
       # caliPath(topojson.feature(us, us.objects.counties));
-      context.fillStyle = '#333';
-      context.stroke()
+      # context.fillStyle = '#333'
+      # context.stroke()
+      # context.fillStyle = '#FF0000'
+      # context.stroke()
 
       drawer = new CanvasDrawer
       drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
+
+
 
       # b_canvas = document.getElementById("calicanvas")
       # b_context = b_canvas.getContext("2d");
@@ -121,7 +151,7 @@ class GeoPolygon
 
 class CanvasDrawer
   drawCanvasThing: (width, height, bounds, data, context) ->
-    context.fillStyle = '#333'
+    context.fillStyle = '#FF0000'
     coords = undefined
     point = undefined
     latitude = undefined
@@ -159,8 +189,11 @@ class CanvasDrawer
           context.lineTo point.x, point.y
         j++
       # Fill the path we just finished drawing with color
-      context.fill()
+      context.stroke()
       i++
     return
+
+class SvgDrawer
+  drawThing: () ->
 
 thing = new RainThing
