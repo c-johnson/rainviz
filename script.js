@@ -14,6 +14,47 @@ RainThing = (function() {
     return display;
   };
 
+  RainThing.prototype.makePoint = function(id, coord) {
+    return {
+      "type": "Feature",
+      "properties": {
+        "GEO_ID": "0400000US06",
+        "STATE": "06",
+        "NAME": id,
+        "LSAD": "",
+        "CENSUSAREA": 155779.220000
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": coord
+      }
+    };
+  };
+
+  RainThing.prototype.californication = function() {
+    var svg;
+    svg = this.makeDisplay("svg");
+    return d3.json('data/USA-california.json', (function(_this) {
+      return function(geoCali) {
+        return d3.csv('data/station-coords.csv', function(stationCoords) {
+          var projection, usaPath;
+          _.each(stationCoords, function(station) {
+            var coords, stationId;
+            stationId = "station-" + station.name;
+            coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
+            return geoCali.features.push(_this.makePoint(stationId, coords));
+          });
+          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
+          usaPath = d3.geo.path(geoCali).projection(projection);
+          svg.append("path").datum(geoCali).attr("d", usaPath);
+          return svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
+            return "subunit-" + d.properties.NAME;
+          }).attr("d", usaPath);
+        });
+      };
+    })(this));
+  };
+
   RainThing.prototype.usaify = function() {
     var svg;
     svg = this.makeDisplay("svg");
@@ -21,22 +62,6 @@ RainThing = (function() {
       return function(geoUSA) {
         var projection, usaPath;
         projection = d3.geo.albersUsa().scale(1000).translate([_this.width / 2, _this.height / 2]);
-        usaPath = d3.geo.path(geoUSA).projection(projection);
-        svg.append("path").datum(geoUSA).attr("d", usaPath);
-        return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
-          return "subunit-" + d.properties.NAME;
-        }).attr("d", usaPath);
-      };
-    })(this));
-  };
-
-  RainThing.prototype.californication = function() {
-    var svg;
-    svg = this.makeDisplay("svg");
-    return d3.json('data/USA-california.json', (function(_this) {
-      return function(geoUSA) {
-        var projection, usaPath;
-        projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
         usaPath = d3.geo.path(geoUSA).projection(projection);
         svg.append("path").datum(geoUSA).attr("d", usaPath);
         return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
