@@ -17,6 +17,7 @@ class RainThing
   californication2: () ->
     svg = @makeDisplay("svg")
 
+    # d3.json 'data/USA-california.json', (geoUSA) =>
     d3.json 'data/USA-states.json', (geoUSA) =>
 
       projection = d3.geo.albersUsa()
@@ -29,6 +30,13 @@ class RainThing
       svg.append("path")
           .datum(geoUSA)
           .attr("d", usaPath);
+
+      svg.selectAll(".subunit")
+          .data(geoUSA.features)
+        .enter().append("path")
+          .attr "class", (d) -> return "subunit-" + d.properties.NAME
+          .attr("d", usaPath);
+
 
   californication: () ->
     d3.csv 'data/cal-boundary.csv', (data) =>

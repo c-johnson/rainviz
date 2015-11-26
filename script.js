@@ -22,7 +22,10 @@ RainThing = (function() {
         var projection, usaPath;
         projection = d3.geo.albersUsa().scale(1000).translate([_this.width / 2, _this.height / 2]);
         usaPath = d3.geo.path(geoUSA).projection(projection);
-        return svg.append("path").datum(geoUSA).attr("d", usaPath);
+        svg.append("path").datum(geoUSA).attr("d", usaPath);
+        return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
+          return "subunit-" + d.properties.NAME;
+        }).attr("d", usaPath);
       };
     })(this));
   };
