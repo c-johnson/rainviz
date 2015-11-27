@@ -97,11 +97,12 @@ RainThing = (function() {
           return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
             return d3.geom.polygon(d).clip(caliLineString.slice());
           })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
-            return fill(self.randomizeArea(d, false));
+            d.initialArea = self.randomizeArea(d, false);
+            return fill(d.initialArea);
           }).attr("d", polygon).on('mouseenter', function(d) {
             return this.style.fill = fill(self.randomizeArea(d, true));
           }).on('mouseleave', function(d) {
-            return this.style.fill = fill(self.randomizeArea(d, false));
+            return this.style.fill = fill(d.initialArea);
           });
         });
       };

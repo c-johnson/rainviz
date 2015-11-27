@@ -127,12 +127,14 @@ class RainThing
             ))
           .enter().append("path")
             .attr("class", "voronoi")
-            .style "fill", (d) -> return fill(self.randomizeArea(d,false))
+            .style "fill", (d) ->
+              d.initialArea = self.randomizeArea(d,false)
+              return fill(d.initialArea)
             .attr("d", polygon)
             .on 'mouseenter', (d) ->
               this.style.fill = fill(self.randomizeArea(d,true))
             .on 'mouseleave', (d) ->
-              this.style.fill = fill(self.randomizeArea(d,false))
+              this.style.fill = fill(d.initialArea)
 
   usaify: () ->
     svg = @makeDisplay("svg")
