@@ -1,4 +1,8 @@
+# FIRST STEP:  Downlaod station data
+
 # Station sniping code
+# First, go to http://wrcc.dri.edu/csc/scenic/data/station_finder/
+# Select the data you'd like to copy in the table, and then in chrome dev tools:
 
 # var endResult = "";
 #
@@ -16,6 +20,26 @@
 #
 # console.log(endResult);
 # copy(endResult);
+
+# SECOND STEP:  Get current data
+#  http://www.cnrfc.noaa.gov/rainfall_data.php
+#  http://www.wrh.noaa.gov/cnrfc/rsa_getprod.php?prod=RNORR5RSA&wfo=cnrfc&version=0
+#     - or http://www.cnrfc.noaa.gov/awipsProducts/RNORR5RSA.php
+
+var delims = [":", ".", "$", ""]
+
+var arr = $('.center-content pre').text().split('\n')
+arr.splice(0, 3)
+arr = arr.filter(function(item) { return delims.indexOf(item.charAt(0)) === -1 })
+arr.map(function(item) {
+  console.log(JSON.stringify(item))
+  var parts = item.split(" : ")
+  var id = parts[0]
+  var name = parts[1]
+  var rawPrecip = parts[2]
+  precipBuckets = rawPrecip.split("/ ")
+  console.log("id = " + id + "\nname = " + name + "\nprecip = " + JSON.stringify(precipBuckets))
+})
 
 window.noop = ->
 window.polygon = (d) ->
