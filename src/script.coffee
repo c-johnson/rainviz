@@ -77,9 +77,13 @@ class RainThing
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
-        fill = d3.scale.linear()
+        fillRed = d3.scale.linear()
           .domain([0, 10000])
           .range(["#fff", "#f00"])
+
+        fillBlue = d3.scale.linear()
+          .domain([0, 10000])
+          .range(["#fff", "#00f"])
 
         projection = d3.geo.albersUsa()
           .scale(3500)
@@ -129,12 +133,12 @@ class RainThing
             .attr("class", "voronoi")
             .style "fill", (d) ->
               d.initialArea = self.randomizeArea(d,false)
-              return fill(d.initialArea)
+              return fillBlue(d.initialArea)
             .attr("d", polygon)
             .on 'mouseenter', (d) ->
-              this.style.fill = fill(self.randomizeArea(d,true))
+              this.style.fill = fillBlue(self.randomizeArea(d,true))
             .on 'mouseleave', (d) ->
-              this.style.fill = fill(d.initialArea)
+              this.style.fill = fillBlue(d.initialArea)
 
   usaify: () ->
     svg = @makeDisplay("svg")

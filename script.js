@@ -67,8 +67,9 @@ RainThing = (function() {
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          var caliLineString, fill, geoStations, projection, self, stationCoordinates, usaPath, voronoi;
-          fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
+          var caliLineString, fillBlue, fillRed, geoStations, projection, self, stationCoordinates, usaPath, voronoi;
+          fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
+          fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
           projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           stationCoordinates = stationCoords.map(function(d) {
             return [+d.long, +d.lat];
@@ -98,11 +99,11 @@ RainThing = (function() {
             return d3.geom.polygon(d).clip(caliLineString.slice());
           })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
             d.initialArea = self.randomizeArea(d, false);
-            return fill(d.initialArea);
+            return fillBlue(d.initialArea);
           }).attr("d", polygon).on('mouseenter', function(d) {
-            return this.style.fill = fill(self.randomizeArea(d, true));
+            return this.style.fill = fillBlue(self.randomizeArea(d, true));
           }).on('mouseleave', function(d) {
-            return this.style.fill = fill(d.initialArea);
+            return this.style.fill = fillBlue(d.initialArea);
           });
         });
       };
