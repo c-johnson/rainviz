@@ -1,3 +1,22 @@
+# Station sniping code
+
+# var endResult = "";
+#
+# $('#station_list tr').each(function(index, trdom) {
+#
+#   var items = [];
+#   var firstChild = $(trdom).find('td:nth-child(3)').text();
+#   stationNames.push(firstChild);
+#   var lat = $(trdom).find('td:nth-child(4)').text();
+#   var long = $(trdom).find('td:nth-child(5)').text();
+#   items.push([firstChild, lat, long])
+#   var result = items.join(",")
+#   endResult += result + "\n"
+# });
+#
+# console.log(endResult);
+# copy(endResult);
+
 window.noop = ->
 window.polygon = (d) ->
   return "M" + d.join("L") + "Z"
@@ -36,17 +55,15 @@ class RainThing
     }
 
   projectLineString: (feature, projection) ->
-    line = [];
-    numpolygons = 0;
+    line = []
     d3.geo.stream(feature, projection.stream({
       polygonStart: noop
-      polygonEnd: () -> numpolygons++
+      polygonEnd: noop
       lineStart: noop
       lineEnd: noop
       point: (x, y) -> line.push([x, y])
       sphere: noop
     }))
-    console.log "numpolygons = " + numpolygons
     return line
 
   californication: () ->
@@ -63,19 +80,15 @@ class RainThing
           .translate([1600, 400])
 
         stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
-        # limits = topojson.feature(geoCali)
         caliLineString = @projectLineString(geoCali, projection)
         voronoi = d3.geom.voronoi()
 
-        geoStations = new GeoPolygon
+        geoStations = new GeoFeature
 
         _.each stationCoords, (station) =>
           stationId = "station-" + station.name
           coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
-          geoCali.features.push(@makePoint(stationId, coords))
-
-        caliLineString2 = @projectLineString(geoCali, projection)
-        debugger
+          geoStations.features.push(@makePoint(stationId, coords))
 
         usaPath = d3.geo.path(geoCali)
           .projection(projection)
@@ -102,10 +115,7 @@ class RainThing
               # Each voronoi region is a convex polygon, therefore we can use
               # d3.geom.polygon.clip, treating each regino as a clip region, with the
               # projected “exterior” as a subject polygon.
-              cali = d3.geom.polygon(d).clip(caliLineString.slice())
-              cali2 = d3.geom.polygon(d).clip(caliLineString2.slice())
-
-              return cali
+              return d3.geom.polygon(d).clip(caliLineString.slice())
             ))
           .enter().append("path")
             .attr("class", "voronoi")
@@ -158,26 +168,8 @@ class RainThing
 
       caliPath(topojson.feature(gJson, gJson.features[0]))
 
-      # caliPath(topojson.feature(us, us.objects.counties));
-      # context.fillStyle = '#333'
-      # context.stroke()
-      # context.fillStyle = '#FF0000'
-      # context.stroke()
-
       drawer = new CanvasDrawer
       drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
-
-
-
-      # b_canvas = document.getElementById("calicanvas")
-      # b_context = b_canvas.getContext("2d");
-      # b_context.fillRect(50, 25, 150, 100);
-
-      # caliPath.bounds(geoCali.geoJson.bounds);
-      # caliPath.projection(d3.geo.albersUsa());
-      # caliPath.context(b_context);
-
-      # drawer.drawCanvasThing(500, 500, geoCali.geoJson.bounds, geoCali.geoJson)
 
   refugeeChart: () ->
     d3.csv 'data/chart.csv', (data) ->
@@ -210,6 +202,11 @@ class RainThing
         data.date
       return
     console.log 'you are now rocking with d3', d3
+
+class GeoFeature
+  constructor: () ->
+    @type = "FeatureCollection"
+    @features = []
 
 class GeoPolygon
   constructor: (coords) ->

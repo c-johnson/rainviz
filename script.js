@@ -1,4 +1,4 @@
-var CanvasDrawer, GeoPolygon, RainThing, thing,
+var CanvasDrawer, GeoFeature, GeoPolygon, RainThing, thing,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 window.noop = function() {};
@@ -38,14 +38,11 @@ RainThing = (function() {
   };
 
   RainThing.prototype.projectLineString = function(feature, projection) {
-    var line, numpolygons;
+    var line;
     line = [];
-    numpolygons = 0;
     d3.geo.stream(feature, projection.stream({
       polygonStart: noop,
-      polygonEnd: function() {
-        return numpolygons++;
-      },
+      polygonEnd: noop,
       lineStart: noop,
       lineEnd: noop,
       point: function(x, y) {
@@ -53,7 +50,6 @@ RainThing = (function() {
       },
       sphere: noop
     }));
-    console.log("numpolygons = " + numpolygons);
     return line;
   };
 
@@ -63,7 +59,7 @@ RainThing = (function() {
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          var caliLineString, caliLineString2, fill, geoStations, projection, stationCoordinates, usaPath, voronoi;
+          var caliLineString, fill, geoStations, projection, stationCoordinates, usaPath, voronoi;
           fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
           projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           stationCoordinates = stationCoords.map(function(d) {
@@ -71,15 +67,13 @@ RainThing = (function() {
           });
           caliLineString = _this.projectLineString(geoCali, projection);
           voronoi = d3.geom.voronoi();
-          geoStations = new GeoPolygon;
+          geoStations = new GeoFeature;
           _.each(stationCoords, function(station) {
             var coords, stationId;
             stationId = "station-" + station.name;
             coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
-            return geoCali.features.push(_this.makePoint(stationId, coords));
+            return geoStations.features.push(_this.makePoint(stationId, coords));
           });
-          caliLineString2 = _this.projectLineString(geoCali, projection);
-          debugger;
           usaPath = d3.geo.path(geoCali).projection(projection);
           svg.append("path").datum(geoCali).attr("d", usaPath);
           svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
@@ -92,10 +86,7 @@ RainThing = (function() {
             return this.style.fill = "";
           });
           return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
-            var cali, cali2;
-            cali = d3.geom.polygon(d).clip(caliLineString.slice());
-            cali2 = d3.geom.polygon(d).clip(caliLineString2.slice());
-            return cali;
+            return d3.geom.polygon(d).clip(caliLineString.slice());
           })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
             return fill(Math.abs(d3.geom.polygon(d).area()));
           }).attr("d", polygon);
@@ -181,6 +172,16 @@ RainThing = (function() {
   };
 
   return RainThing;
+
+})();
+
+GeoFeature = (function() {
+  function GeoFeature() {
+    this.type = "FeatureCollection";
+    this.features = [];
+  }
+
+  return GeoFeature;
 
 })();
 
