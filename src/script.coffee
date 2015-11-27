@@ -4,6 +4,8 @@
 # First, go to http://wrcc.dri.edu/csc/scenic/data/station_finder/
 # Select the data you'd like to copy in the table, and then in chrome dev tools:
 
+# THE CODE:
+
 # var endResult = "";
 #
 # $('#station_list tr').each(function(index, trdom) {
@@ -26,20 +28,31 @@
 #  http://www.wrh.noaa.gov/cnrfc/rsa_getprod.php?prod=RNORR5RSA&wfo=cnrfc&version=0
 #     - or http://www.cnrfc.noaa.gov/awipsProducts/RNORR5RSA.php
 
-var delims = [":", ".", "$", ""]
+# THE CODE:
 
-var arr = $('.center-content pre').text().split('\n')
-arr.splice(0, 3)
-arr = arr.filter(function(item) { return delims.indexOf(item.charAt(0)) === -1 })
-arr.map(function(item) {
-  console.log(JSON.stringify(item))
-  var parts = item.split(" : ")
-  var id = parts[0]
-  var name = parts[1]
-  var rawPrecip = parts[2]
-  precipBuckets = rawPrecip.split("/ ")
-  console.log("id = " + id + "\nname = " + name + "\nprecip = " + JSON.stringify(precipBuckets))
-})
+# var delims = [":", ".", "$", ""];
+#
+# precipData = [];
+#
+# var arr = $('.center-content pre').text().split('\n');
+# arr.splice(0, 3);
+# arr = arr.filter(function(item) { return delims.indexOf(item.charAt(0)) === -1 });
+# arr.map(function(item) {
+#   console.log(JSON.stringify(item));
+#   var parts = item.split(" : ");
+#   var id = parts[0];
+#   var name = parts[1];
+#   var rawPrecip = parts[2];
+#   precipBuckets = rawPrecip.split("/ ");
+#   var precipRow = {
+#     id: id,
+#     name: name,
+#     precip: precipBuckets
+#   };
+#   precipData.push(precipRow);
+#   // console.log("id = " + id + "\nname = " + name + "\nprecip = " + JSON.stringify(precipBuckets))
+# });
+# copy(precipData);
 
 window.noop = ->
 window.polygon = (d) ->
@@ -96,68 +109,107 @@ class RainThing
     num2 = Math.random() * 10000
     return (num1 + num2) / 2
 
+  processPrecip: (precipData) ->
+    precipModel = []
+
+    precipData.forEach (item) ->
+      stationData =
+        id: item.id.trim()
+        name: item.name.trim()
+        precipBuckets:
+          oneHour: parseFloat(item.precip[0].trim())
+          twoHour: parseFloat(item.precip[1].trim())
+          threeHour: parseFloat(item.precip[2].trim())
+          sixHour: parseFloat(item.precip[3].trim())
+          twelveHour: parseFloat(item.precip[4].trim())
+          daily: parseFloat(item.precip[5].trim())
+
+      precipModel.push(stationData)
+
+    return precipModel
+
   californication: () ->
     svg = @makeDisplay("svg")
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
-        fillRed = d3.scale.linear()
-          .domain([0, 10000])
-          .range(["#fff", "#f00"])
+        d3.json 'data/precip-data.json', (precipData) =>
+          stationData = @processPrecip(precipData)
 
-        fillBlue = d3.scale.linear()
-          .domain([0, 10000])
-          .range(["#fff", "#00f"])
+          commonSet = []
 
-        projection = d3.geo.albersUsa()
-          .scale(3500)
-          .translate([1600, 400])
+          stationData.forEach (item) ->
+            stationCoords.forEach (sCoord) ->
+              if item.id == sCoord.name
+                commonSet.push(_.extend({}, item, sCoord))
 
-        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
-        caliLineString = @projectLineString(geoCali, projection)
-        voronoi = d3.geom.voronoi()
+            # if item.precipBuckets.oneHour != 0 && !isNaN(item.precipBuckets.oneHour)
+              # debugger
 
-        geoStations = new GeoFeature
+          commonSet.forEach (station) ->
+            for bucket in station.precipBuckets
+              if station.precipBuckets.hasOwnProperty(bucket)
+                amt = station.precipBuckets[bucket]
+                if amt != 0 && !isNaN(amt)
+                  debugger
 
-        _.each stationCoords, (station) =>
-          stationId = "station-" + station.name
-          coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
-          geoStations.features.push(@makePoint(stationId, coords))
+          fillRed = d3.scale.linear()
+            .domain([0, 10000])
+            .range(["#fff", "#f00"])
 
-        usaPath = d3.geo.path(geoCali)
-          .projection(projection)
+          fillBlue = d3.scale.linear()
+            .domain([0, 10000])
+            .range(["#fff", "#00f"])
 
-        svg.append("path")
-            .datum(geoCali)
-            .attr("d", usaPath)
+          projection = d3.geo.albersUsa()
+            .scale(3500)
+            .translate([1600, 400])
 
-        svg.selectAll(".subunit")
-            .data(geoCali.features)
-          .enter().append("path")
-            .attr "class", (d) -> return "subunit-" + d.properties.NAME
-            .attr("d", usaPath)
+          stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+          caliLineString = @projectLineString(geoCali, projection)
+          voronoi = d3.geom.voronoi()
 
-        self = @
+          geoStations = new GeoFeature
 
-        svg.append("g")
-            .attr("class", "land")
-          .selectAll(".voronoi")
-            .data(voronoi(stationCoordinates.map(projection)).map( (d) ->
-              # Each voronoi region is a convex polygon, therefore we can use
-              # d3.geom.polygon.clip, treating each regino as a clip region, with the
-              # projected “exterior” as a subject polygon.
-              return d3.geom.polygon(d).clip(caliLineString.slice())
-            ))
-          .enter().append("path")
-            .attr("class", "voronoi")
-            .style "fill", (d) ->
-              d.initialArea = self.randomizeArea(d,false)
-              return fillBlue(d.initialArea)
-            .attr("d", polygon)
-            .on 'mouseenter', (d) ->
-              this.style.fill = fillBlue(self.randomizeArea(d,true))
-            .on 'mouseleave', (d) ->
-              this.style.fill = fillBlue(d.initialArea)
+          _.each stationCoords, (station) =>
+            stationId = "station-" + station.name
+            coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
+            geoStations.features.push(@makePoint(stationId, coords))
+
+          usaPath = d3.geo.path(geoCali)
+            .projection(projection)
+
+          svg.append("path")
+              .datum(geoCali)
+              .attr("d", usaPath)
+
+          svg.selectAll(".subunit")
+              .data(geoCali.features)
+            .enter().append("path")
+              .attr "class", (d) -> return "subunit-" + d.properties.NAME
+              .attr("d", usaPath)
+
+          self = @
+
+          svg.append("g")
+              .attr("class", "land")
+            .selectAll(".voronoi")
+              .data(voronoi(stationCoordinates.map(projection)).map( (d) ->
+                # Each voronoi region is a convex polygon, therefore we can use
+                # d3.geom.polygon.clip, treating each regino as a clip region, with the
+                # projected “exterior” as a subject polygon.
+                return d3.geom.polygon(d).clip(caliLineString.slice())
+              ))
+            .enter().append("path")
+              .attr("class", "voronoi")
+              .style "fill", (d) ->
+                d.initialArea = self.randomizeArea(d,false)
+                return fillBlue(d.initialArea)
+              .attr("d", polygon)
+              .on 'mouseenter', (d) ->
+                this.style.fill = fillBlue(self.randomizeArea(d,true))
+              .on 'mouseleave', (d) ->
+                this.style.fill = fillBlue(d.initialArea)
 
   usaify: () ->
     svg = @makeDisplay("svg")

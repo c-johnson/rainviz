@@ -61,43 +61,97 @@ RainThing = (function() {
     return (num1 + num2) / 2;
   };
 
+  RainThing.prototype.processPrecip = function(precipData) {
+    var precipModel;
+    precipModel = [];
+    precipData.forEach(function(item) {
+      var stationData;
+      stationData = {
+        id: item.id.trim(),
+        name: item.name.trim(),
+        precipBuckets: {
+          oneHour: parseFloat(item.precip[0].trim()),
+          twoHour: parseFloat(item.precip[1].trim()),
+          threeHour: parseFloat(item.precip[2].trim()),
+          sixHour: parseFloat(item.precip[3].trim()),
+          twelveHour: parseFloat(item.precip[4].trim()),
+          daily: parseFloat(item.precip[5].trim())
+        }
+      };
+      return precipModel.push(stationData);
+    });
+    return precipModel;
+  };
+
   RainThing.prototype.californication = function() {
     var svg;
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          var caliLineString, fillBlue, fillRed, geoStations, projection, self, stationCoordinates, usaPath, voronoi;
-          fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
-          fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
-          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
-          stationCoordinates = stationCoords.map(function(d) {
-            return [+d.long, +d.lat];
-          });
-          caliLineString = _this.projectLineString(geoCali, projection);
-          voronoi = d3.geom.voronoi();
-          geoStations = new GeoFeature;
-          _.each(stationCoords, function(station) {
-            var coords, stationId;
-            stationId = "station-" + station.name;
-            coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
-            return geoStations.features.push(_this.makePoint(stationId, coords));
-          });
-          usaPath = d3.geo.path(geoCali).projection(projection);
-          svg.append("path").datum(geoCali).attr("d", usaPath);
-          svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
-            return "subunit-" + d.properties.NAME;
-          }).attr("d", usaPath);
-          self = _this;
-          return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
-            return d3.geom.polygon(d).clip(caliLineString.slice());
-          })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
-            d.initialArea = self.randomizeArea(d, false);
-            return fillBlue(d.initialArea);
-          }).attr("d", polygon).on('mouseenter', function(d) {
-            return this.style.fill = fillBlue(self.randomizeArea(d, true));
-          }).on('mouseleave', function(d) {
-            return this.style.fill = fillBlue(d.initialArea);
+          return d3.json('data/precip-data.json', function(precipData) {
+            var caliLineString, commonSet, fillBlue, fillRed, geoStations, projection, self, stationCoordinates, stationData, usaPath, voronoi;
+            stationData = _this.processPrecip(precipData);
+            commonSet = [];
+            stationData.forEach(function(item) {
+              return stationCoords.forEach(function(sCoord) {
+                if (item.id === sCoord.name) {
+                  return commonSet.push(_.extend({}, item, sCoord));
+                }
+              });
+            });
+            commonSet.forEach(function(station) {
+              var amt, bucket, k, len, ref, results;
+              ref = station.precipBuckets;
+              results = [];
+              for (k = 0, len = ref.length; k < len; k++) {
+                bucket = ref[k];
+                if (station.precipBuckets.hasOwnProperty(bucket)) {
+                  amt = station.precipBuckets[bucket];
+                  if (amt !== 0 && !isNaN(amt)) {
+                    results.push((function() {
+                      debugger;
+                    })());
+                  } else {
+                    results.push(void 0);
+                  }
+                } else {
+                  results.push(void 0);
+                }
+              }
+              return results;
+            });
+            fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
+            fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
+            projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
+            stationCoordinates = stationCoords.map(function(d) {
+              return [+d.long, +d.lat];
+            });
+            caliLineString = _this.projectLineString(geoCali, projection);
+            voronoi = d3.geom.voronoi();
+            geoStations = new GeoFeature;
+            _.each(stationCoords, function(station) {
+              var coords, stationId;
+              stationId = "station-" + station.name;
+              coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
+              return geoStations.features.push(_this.makePoint(stationId, coords));
+            });
+            usaPath = d3.geo.path(geoCali).projection(projection);
+            svg.append("path").datum(geoCali).attr("d", usaPath);
+            svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
+              return "subunit-" + d.properties.NAME;
+            }).attr("d", usaPath);
+            self = _this;
+            return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
+              return d3.geom.polygon(d).clip(caliLineString.slice());
+            })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
+              d.initialArea = self.randomizeArea(d, false);
+              return fillBlue(d.initialArea);
+            }).attr("d", polygon).on('mouseenter', function(d) {
+              return this.style.fill = fillBlue(self.randomizeArea(d, true));
+            }).on('mouseleave', function(d) {
+              return this.style.fill = fillBlue(d.initialArea);
+            });
           });
         });
       };
