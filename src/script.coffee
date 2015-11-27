@@ -1,3 +1,22 @@
+# Station sniping code
+
+# var endResult = "";
+#
+# $('#station_list tr').each(function(index, trdom) {
+#
+#   var items = [];
+#   var firstChild = $(trdom).find('td:nth-child(3)').text();
+#   stationNames.push(firstChild);
+#   var lat = $(trdom).find('td:nth-child(4)').text();
+#   var long = $(trdom).find('td:nth-child(5)').text();
+#   items.push([firstChild, lat, long])
+#   var result = items.join(",")
+#   endResult += result + "\n"
+# });
+#
+# console.log(endResult);
+# copy(endResult);
+
 window.noop = ->
 window.polygon = (d) ->
   return "M" + d.join("L") + "Z"
@@ -36,36 +55,50 @@ class RainThing
     }
 
   projectLineString: (feature, projection) ->
-    line = [];
+    line = []
     d3.geo.stream(feature, projection.stream({
-      polygonStart: noop,
-      polygonEnd: noop,
-      lineStart: () -> line = [],
-      lineEnd: noop,
-      point: (x, y) -> line.push([x, y]),
+      polygonStart: noop
+      polygonEnd: noop
+      lineStart: noop
+      lineEnd: noop
+      point: (x, y) -> line.push([x, y])
       sphere: noop
-    }));
+    }))
     return line
+
+  randomizeArea: (d, double) ->
+    num1 = Math.abs(d3.geom.polygon(d).area())
+    num1 = if double then num1 * 2 else num1
+    num2 = Math.random() * 10000
+    return (num1 + num2) / 2
 
   californication: () ->
     svg = @makeDisplay("svg")
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
-        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
-
-        _.each stationCoords, (station) =>
-          stationId = "station-" + station.name
-          coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
-          geoCali.features.push(@makePoint(stationId, coords))
-
-        fill = d3.scale.linear()
+        fillRed = d3.scale.linear()
           .domain([0, 10000])
           .range(["#fff", "#f00"])
+
+        fillBlue = d3.scale.linear()
+          .domain([0, 10000])
+          .range(["#fff", "#00f"])
 
         projection = d3.geo.albersUsa()
           .scale(3500)
           .translate([1600, 400])
+
+        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+        caliLineString = @projectLineString(geoCali, projection)
+        voronoi = d3.geom.voronoi()
+
+        geoStations = new GeoFeature
+
+        _.each stationCoords, (station) =>
+          stationId = "station-" + station.name
+          coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
+          geoStations.features.push(@makePoint(stationId, coords))
 
         usaPath = d3.geo.path(geoCali)
           .projection(projection)
@@ -74,14 +107,13 @@ class RainThing
             .datum(geoCali)
             .attr("d", usaPath)
 
-        voronoi = d3.geom.voronoi()
-        caliLineString = @projectLineString(geoCali, projection)
-
         svg.selectAll(".subunit")
             .data(geoCali.features)
           .enter().append("path")
             .attr "class", (d) -> return "subunit-" + d.properties.NAME
             .attr("d", usaPath)
+
+        self = @
 
         svg.append("g")
             .attr("class", "land")
@@ -94,13 +126,14 @@ class RainThing
             ))
           .enter().append("path")
             .attr("class", "voronoi")
-            .style "fill", (d) -> return fill(Math.abs(d3.geom.polygon(d).area()))
-            .attr("d", polygon);
-            .on 'mouseenter', (feature) ->
-              # if feature.geometry.type == "Point"
-              this.style.fill = "blue"
-            .on 'mouseleave', (feature) ->
-              this.style.fill = ""
+            .style "fill", (d) ->
+              d.initialArea = self.randomizeArea(d,false)
+              return fillBlue(d.initialArea)
+            .attr("d", polygon)
+            .on 'mouseenter', (d) ->
+              this.style.fill = fillBlue(self.randomizeArea(d,true))
+            .on 'mouseleave', (d) ->
+              this.style.fill = fillBlue(d.initialArea)
 
   usaify: () ->
     svg = @makeDisplay("svg")
@@ -148,26 +181,8 @@ class RainThing
 
       caliPath(topojson.feature(gJson, gJson.features[0]))
 
-      # caliPath(topojson.feature(us, us.objects.counties));
-      # context.fillStyle = '#333'
-      # context.stroke()
-      # context.fillStyle = '#FF0000'
-      # context.stroke()
-
       drawer = new CanvasDrawer
       drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
-
-
-
-      # b_canvas = document.getElementById("calicanvas")
-      # b_context = b_canvas.getContext("2d");
-      # b_context.fillRect(50, 25, 150, 100);
-
-      # caliPath.bounds(geoCali.geoJson.bounds);
-      # caliPath.projection(d3.geo.albersUsa());
-      # caliPath.context(b_context);
-
-      # drawer.drawCanvasThing(500, 500, geoCali.geoJson.bounds, geoCali.geoJson)
 
   refugeeChart: () ->
     d3.csv 'data/chart.csv', (data) ->
@@ -200,6 +215,11 @@ class RainThing
         data.date
       return
     console.log 'you are now rocking with d3', d3
+
+class GeoFeature
+  constructor: () ->
+    @type = "FeatureCollection"
+    @features = []
 
 class GeoPolygon
   constructor: (coords) ->
@@ -236,10 +256,11 @@ class GeoPolygon
         bounds[0][1] = bounds.yMax = if bounds.yMax > lat then bounds.yMax else lat
 
   updateCoords: (newCoords, index) =>
-    if index then @updateFeature(index, newCoords)
-    else
-      for i in [0..@fLen()]
-        @updateFeature(i, newCoords)
+    if newCoords
+      if index then @updateFeature(index, newCoords)
+      else
+        for i in [0..@fLen()]
+          @updateFeature(i, newCoords)
 
 class CanvasDrawer
   drawCanvasThing: (width, height, bounds, data, context) ->
