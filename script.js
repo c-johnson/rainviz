@@ -5,7 +5,7 @@ RainThing = (function() {
   function RainThing() {
     this.width = 960;
     this.height = 1160;
-    this.californication();
+    this.usaify();
   }
 
   RainThing.prototype.makeDisplay = function(type) {
@@ -49,7 +49,13 @@ RainThing = (function() {
           svg.append("path").datum(geoCali).attr("d", usaPath);
           return svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
             return "subunit-" + d.properties.NAME;
-          }).attr("d", usaPath);
+          }).attr("d", usaPath).on('mouseenter', function(feature) {
+            if (feature.geometry.type === "Point") {
+              return this.style.fill = "blue";
+            }
+          }).on('mouseleave', function(feature) {
+            return this.style.fill = "";
+          });
         });
       };
     })(this));
@@ -66,7 +72,11 @@ RainThing = (function() {
         svg.append("path").datum(geoUSA).attr("d", usaPath);
         return svg.selectAll(".subunit").data(geoUSA.features).enter().append("path").attr("class", function(d) {
           return "subunit-" + d.properties.NAME;
-        }).attr("d", usaPath);
+        }).attr("d", usaPath).on('mouseenter', function(feature) {
+          return this.style.fill = "blue";
+        }).on('mouseleave', function(feature) {
+          return this.style.fill = "";
+        });
       };
     })(this));
   };

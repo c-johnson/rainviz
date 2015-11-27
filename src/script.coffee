@@ -2,8 +2,8 @@ class RainThing
   constructor: () ->
     @width = 960
     @height = 1160
-    @californication()
-    # @usaify()
+    # @californication()
+    @usaify()
     # @refugeeChart()
     # @derpyCal()
 
@@ -56,7 +56,12 @@ class RainThing
             .data(geoCali.features)
           .enter().append("path")
             .attr "class", (d) -> return "subunit-" + d.properties.NAME
-            .attr("d", usaPath);
+            .attr("d", usaPath)
+            .on 'mouseenter', (feature) ->
+              if feature.geometry.type == "Point"
+                this.style.fill = "blue"
+            .on 'mouseleave', (feature) ->
+              this.style.fill = ""
 
   usaify: () ->
     svg = @makeDisplay("svg")
@@ -78,7 +83,11 @@ class RainThing
           .data(geoUSA.features)
         .enter().append("path")
           .attr "class", (d) -> return "subunit-" + d.properties.NAME
-          .attr("d", usaPath);
+          .attr("d", usaPath)
+          .on 'mouseenter', (feature) ->
+            this.style.fill = "blue"
+          .on 'mouseleave', (feature) ->
+            this.style.fill = ""
 
   derpyCal: () ->
     d3.csv 'data/cal-boundary.csv', (data) =>
