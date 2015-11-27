@@ -66,6 +66,12 @@ class RainThing
     }))
     return line
 
+  randomizeArea: (d, double) ->
+    num1 = Math.abs(d3.geom.polygon(d).area())
+    num1 = if double then num1 * 2 else num1
+    num2 = Math.random() * 10000
+    return (num1 + num2) / 2
+
   californication: () ->
     svg = @makeDisplay("svg")
 
@@ -108,6 +114,8 @@ class RainThing
             .on 'mouseleave', (feature) ->
               this.style.fill = ""
 
+        self = @
+
         svg.append("g")
             .attr("class", "land")
           .selectAll(".voronoi")
@@ -119,8 +127,12 @@ class RainThing
             ))
           .enter().append("path")
             .attr("class", "voronoi")
-            .style "fill", (d) -> return fill(Math.abs(d3.geom.polygon(d).area()))
-            .attr("d", polygon);
+            .style "fill", (d) -> return fill(self.randomizeArea(d,false))
+            .attr("d", polygon)
+            .on 'mouseenter', (d) ->
+              this.style.fill = fill(self.randomizeArea(d,true))
+            .on 'mouseleave', (d) ->
+              this.style.fill = fill(self.randomizeArea(d,false))
 
   usaify: () ->
     svg = @makeDisplay("svg")

@@ -53,13 +53,21 @@ RainThing = (function() {
     return line;
   };
 
+  RainThing.prototype.randomizeArea = function(d, double) {
+    var num1, num2;
+    num1 = Math.abs(d3.geom.polygon(d).area());
+    num1 = double ? num1 * 2 : num1;
+    num2 = Math.random() * 10000;
+    return (num1 + num2) / 2;
+  };
+
   RainThing.prototype.californication = function() {
     var svg;
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          var caliLineString, fill, geoStations, projection, stationCoordinates, usaPath, voronoi;
+          var caliLineString, fill, geoStations, projection, self, stationCoordinates, usaPath, voronoi;
           fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
           projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           stationCoordinates = stationCoords.map(function(d) {
@@ -85,11 +93,16 @@ RainThing = (function() {
           }).on('mouseleave', function(feature) {
             return this.style.fill = "";
           });
+          self = _this;
           return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
             return d3.geom.polygon(d).clip(caliLineString.slice());
           })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
-            return fill(Math.abs(d3.geom.polygon(d).area()));
-          }).attr("d", polygon);
+            return fill(self.randomizeArea(d, false));
+          }).attr("d", polygon).on('mouseenter', function(d) {
+            return this.style.fill = fill(self.randomizeArea(d, true));
+          }).on('mouseleave', function(d) {
+            return this.style.fill = fill(self.randomizeArea(d, false));
+          });
         });
       };
     })(this));
