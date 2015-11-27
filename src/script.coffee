@@ -52,6 +52,13 @@ class RainThing
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
+        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+
+        _.each stationCoords, (station) =>
+          stationId = "station-" + station.name
+          coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
+          geoCali.features.push(@makePoint(stationId, coords))
+
         fill = d3.scale.linear()
           .domain([0, 10000])
           .range(["#fff", "#f00"])
@@ -60,15 +67,6 @@ class RainThing
           .scale(3500)
           .translate([1600, 400])
 
-        _.each stationCoords, (station) =>
-          stationId = "station-" + station.name
-          coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
-          geoCali.features.push(@makePoint(stationId, coords))
-
-        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
-        caliLineString = @projectLineString(geoCali.features[0], projection)
-        voronoi = d3.geom.voronoi()
-
         usaPath = d3.geo.path(geoCali)
           .projection(projection)
 
@@ -76,16 +74,14 @@ class RainThing
             .datum(geoCali)
             .attr("d", usaPath)
 
+        voronoi = d3.geom.voronoi()
+        caliLineString = @projectLineString(geoCali, projection)
+
         svg.selectAll(".subunit")
             .data(geoCali.features)
           .enter().append("path")
             .attr "class", (d) -> return "subunit-" + d.properties.NAME
             .attr("d", usaPath)
-            .on 'mouseenter', (feature) ->
-              if feature.geometry.type == "Point"
-                this.style.fill = "blue"
-            .on 'mouseleave', (feature) ->
-              this.style.fill = ""
 
         svg.append("g")
             .attr("class", "land")
@@ -100,6 +96,11 @@ class RainThing
             .attr("class", "voronoi")
             .style "fill", (d) -> return fill(Math.abs(d3.geom.polygon(d).area()))
             .attr("d", polygon);
+            .on 'mouseenter', (feature) ->
+              # if feature.geometry.type == "Point"
+              this.style.fill = "blue"
+            .on 'mouseleave', (feature) ->
+              this.style.fill = ""
 
   usaify: () ->
     svg = @makeDisplay("svg")

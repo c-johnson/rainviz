@@ -62,8 +62,6 @@ RainThing = (function() {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
           var caliLineString, fill, projection, stationCoordinates, usaPath, voronoi;
-          fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
-          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           _.each(stationCoords, function(station) {
             var coords, stationId;
             stationId = "station-" + station.name;
@@ -73,10 +71,12 @@ RainThing = (function() {
           stationCoordinates = stationCoords.map(function(d) {
             return [+d.long, +d.lat];
           });
-          caliLineString = _this.projectLineString(geoCali.features[0], projection);
-          voronoi = d3.geom.voronoi();
+          fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
+          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           usaPath = d3.geo.path(geoCali).projection(projection);
           svg.append("path").datum(geoCali).attr("d", usaPath);
+          voronoi = d3.geom.voronoi();
+          caliLineString = _this.projectLineString(geoCali, projection);
           svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
             return "subunit-" + d.properties.NAME;
           }).attr("d", usaPath).on('mouseenter', function(feature) {
