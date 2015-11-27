@@ -37,14 +37,16 @@ class RainThing
 
   projectLineString: (feature, projection) ->
     line = [];
+    numpolygons = 0;
     d3.geo.stream(feature, projection.stream({
-      polygonStart: noop,
-      polygonEnd: noop,
-      lineStart: () -> line = [],
-      lineEnd: noop,
-      point: (x, y) -> line.push([x, y]),
+      polygonStart: noop
+      polygonEnd: () -> numpolygons++
+      lineStart: noop
+      lineEnd: noop
+      point: (x, y) -> line.push([x, y])
       sphere: noop
-    }));
+    }))
+    console.log "numpolygons = " + numpolygons
     return line
 
   californication: () ->
@@ -60,14 +62,20 @@ class RainThing
           .scale(3500)
           .translate([1600, 400])
 
+        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+        # limits = topojson.feature(geoCali)
+        caliLineString = @projectLineString(geoCali, projection)
+        voronoi = d3.geom.voronoi()
+
+        geoStations = new GeoPolygon
+
         _.each stationCoords, (station) =>
           stationId = "station-" + station.name
           coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
           geoCali.features.push(@makePoint(stationId, coords))
 
-        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
-        caliLineString = @projectLineString(geoCali.features[0], projection)
-        voronoi = d3.geom.voronoi()
+        caliLineString2 = @projectLineString(geoCali, projection)
+        debugger
 
         usaPath = d3.geo.path(geoCali)
           .projection(projection)
@@ -94,7 +102,10 @@ class RainThing
               # Each voronoi region is a convex polygon, therefore we can use
               # d3.geom.polygon.clip, treating each regino as a clip region, with the
               # projected “exterior” as a subject polygon.
-              return d3.geom.polygon(d).clip(caliLineString.slice())
+              cali = d3.geom.polygon(d).clip(caliLineString.slice())
+              cali2 = d3.geom.polygon(d).clip(caliLineString2.slice())
+
+              return cali
             ))
           .enter().append("path")
             .attr("class", "voronoi")
@@ -235,10 +246,11 @@ class GeoPolygon
         bounds[0][1] = bounds.yMax = if bounds.yMax > lat then bounds.yMax else lat
 
   updateCoords: (newCoords, index) =>
-    if index then @updateFeature(index, newCoords)
-    else
-      for i in [0..@fLen()]
-        @updateFeature(i, newCoords)
+    if newCoords
+      if index then @updateFeature(index, newCoords)
+      else
+        for i in [0..@fLen()]
+          @updateFeature(i, newCoords)
 
 class CanvasDrawer
   drawCanvasThing: (width, height, bounds, data, context) ->
