@@ -1,9 +1,13 @@
+window.noop = ->
+window.polygon = (d) ->
+  return "M" + d.join("L") + "Z"
+
 class RainThing
   constructor: () ->
     @width = 960
     @height = 1160
-    # @californication()
-    @usaify()
+    @californication()
+    # @usaify()
     # @refugeeChart()
     # @derpyCal()
 
@@ -31,26 +35,46 @@ class RainThing
       }
     }
 
+  projectLineString: (feature, projection) ->
+    line = [];
+    d3.geo.stream(feature, projection.stream({
+      polygonStart: noop,
+      polygonEnd: noop,
+      lineStart: () -> line = [],
+      lineEnd: noop,
+      point: (x, y) -> line.push([x, y]),
+      sphere: noop
+    }));
+    return line
+
   californication: () ->
     svg = @makeDisplay("svg")
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
+        fill = d3.scale.linear()
+          .domain([0, 10000])
+          .range(["#fff", "#f00"])
+
+        projection = d3.geo.albersUsa()
+          .scale(3500)
+          .translate([1600, 400])
+
         _.each stationCoords, (station) =>
           stationId = "station-" + station.name
           coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
           geoCali.features.push(@makePoint(stationId, coords))
 
-        projection = d3.geo.albersUsa()
-          .scale(3500)
-          .translate([1600, 400])
+        stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+        caliLineString = @projectLineString(geoCali.features[0], projection)
+        voronoi = d3.geom.voronoi()
 
         usaPath = d3.geo.path(geoCali)
           .projection(projection)
 
         svg.append("path")
             .datum(geoCali)
-            .attr("d", usaPath);
+            .attr("d", usaPath)
 
         svg.selectAll(".subunit")
             .data(geoCali.features)
@@ -62,6 +86,20 @@ class RainThing
                 this.style.fill = "blue"
             .on 'mouseleave', (feature) ->
               this.style.fill = ""
+
+        svg.append("g")
+            .attr("class", "land")
+          .selectAll(".voronoi")
+            .data(voronoi(stationCoordinates.map(projection)).map( (d) ->
+              # Each voronoi region is a convex polygon, therefore we can use
+              # d3.geom.polygon.clip, treating each regino as a clip region, with the
+              # projected “exterior” as a subject polygon.
+              return d3.geom.polygon(d).clip(caliLineString.slice())
+            ))
+          .enter().append("path")
+            .attr("class", "voronoi")
+            .style "fill", (d) -> return fill(Math.abs(d3.geom.polygon(d).area()))
+            .attr("d", polygon);
 
   usaify: () ->
     svg = @makeDisplay("svg")
@@ -77,7 +115,7 @@ class RainThing
 
       svg.append("path")
           .datum(geoUSA)
-          .attr("d", usaPath);
+          .attr("d", usaPath)
 
       svg.selectAll(".subunit")
           .data(geoUSA.features)

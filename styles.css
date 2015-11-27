@@ -48,3 +48,23 @@
 
 .subunit-station-AMYC1 {
   fill: blue; }
+
+svg {
+  fill: white; }
+
+path {
+  stroke-linejoin: round; }
+
+.points {
+  fill: black; }
+
+.subunit {
+  fill: none;
+  stroke: #999;
+  stroke-size: 1px; }
+
+.voronoi {
+  fill: none;
+  fill-opacity: 0.5;
+  stroke: white;
+  stroke-width: .5px; }

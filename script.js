@@ -1,11 +1,17 @@
 var CanvasDrawer, GeoPolygon, RainThing, thing,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
+window.noop = function() {};
+
+window.polygon = function(d) {
+  return "M" + d.join("L") + "Z";
+};
+
 RainThing = (function() {
   function RainThing() {
     this.width = 960;
     this.height = 1160;
-    this.usaify();
+    this.californication();
   }
 
   RainThing.prototype.makeDisplay = function(type) {
@@ -31,23 +37,47 @@ RainThing = (function() {
     };
   };
 
+  RainThing.prototype.projectLineString = function(feature, projection) {
+    var line;
+    line = [];
+    d3.geo.stream(feature, projection.stream({
+      polygonStart: noop,
+      polygonEnd: noop,
+      lineStart: function() {
+        return line = [];
+      },
+      lineEnd: noop,
+      point: function(x, y) {
+        return line.push([x, y]);
+      },
+      sphere: noop
+    }));
+    return line;
+  };
+
   RainThing.prototype.californication = function() {
     var svg;
     svg = this.makeDisplay("svg");
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          var projection, usaPath;
+          var caliLineString, fill, projection, stationCoordinates, usaPath, voronoi;
+          fill = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
+          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
           _.each(stationCoords, function(station) {
             var coords, stationId;
             stationId = "station-" + station.name;
             coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
             return geoCali.features.push(_this.makePoint(stationId, coords));
           });
-          projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
+          stationCoordinates = stationCoords.map(function(d) {
+            return [+d.long, +d.lat];
+          });
+          caliLineString = _this.projectLineString(geoCali.features[0], projection);
+          voronoi = d3.geom.voronoi();
           usaPath = d3.geo.path(geoCali).projection(projection);
           svg.append("path").datum(geoCali).attr("d", usaPath);
-          return svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
+          svg.selectAll(".subunit").data(geoCali.features).enter().append("path").attr("class", function(d) {
             return "subunit-" + d.properties.NAME;
           }).attr("d", usaPath).on('mouseenter', function(feature) {
             if (feature.geometry.type === "Point") {
@@ -56,6 +86,11 @@ RainThing = (function() {
           }).on('mouseleave', function(feature) {
             return this.style.fill = "";
           });
+          return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
+            return d3.geom.polygon(d).clip(caliLineString.slice());
+          })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
+            return fill(Math.abs(d3.geom.polygon(d).area()));
+          }).attr("d", polygon);
         });
       };
     })(this));
