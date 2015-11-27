@@ -90,7 +90,7 @@ RainThing = (function() {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
           return d3.json('data/precip-data.json', function(precipData) {
-            var caliLineString, commonSet, fillBlue, fillRed, geoStations, projection, self, stationCoordinates, stationData, usaPath, voronoi;
+            var caliLineString, commonSet, fillBlue, fillRed, finalCoords, geoStations, projection, self, stationCoordinates, stationData, usaPath, voronoi;
             stationData = _this.processPrecip(precipData);
             commonSet = [];
             stationData.forEach(function(item) {
@@ -121,16 +121,17 @@ RainThing = (function() {
               }
               return results;
             });
+            finalCoords = commonSet;
             fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
             fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
             projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
-            stationCoordinates = stationCoords.map(function(d) {
+            stationCoordinates = finalCoords.map(function(d) {
               return [+d.long, +d.lat];
             });
             caliLineString = _this.projectLineString(geoCali, projection);
             voronoi = d3.geom.voronoi();
             geoStations = new GeoFeature;
-            _.each(stationCoords, function(station) {
+            _.each(finalCoords, function(station) {
               var coords, stationId;
               stationId = "station-" + station.name;
               coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];

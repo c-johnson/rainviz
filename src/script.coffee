@@ -143,15 +143,15 @@ class RainThing
               if item.id == sCoord.name
                 commonSet.push(_.extend({}, item, sCoord))
 
-            # if item.precipBuckets.oneHour != 0 && !isNaN(item.precipBuckets.oneHour)
-              # debugger
-
           commonSet.forEach (station) ->
             for bucket in station.precipBuckets
               if station.precipBuckets.hasOwnProperty(bucket)
                 amt = station.precipBuckets[bucket]
                 if amt != 0 && !isNaN(amt)
                   debugger
+
+          finalCoords = commonSet
+          # finalCoords = stationCoords  # Either way can work
 
           fillRed = d3.scale.linear()
             .domain([0, 10000])
@@ -165,13 +165,13 @@ class RainThing
             .scale(3500)
             .translate([1600, 400])
 
-          stationCoordinates = stationCoords.map (d) -> return [+d.long, +d.lat]
+          stationCoordinates = finalCoords.map (d) -> return [+d.long, +d.lat]
           caliLineString = @projectLineString(geoCali, projection)
           voronoi = d3.geom.voronoi()
 
           geoStations = new GeoFeature
 
-          _.each stationCoords, (station) =>
+          _.each finalCoords, (station) =>
             stationId = "station-" + station.name
             coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
             geoStations.features.push(@makePoint(stationId, coords))
