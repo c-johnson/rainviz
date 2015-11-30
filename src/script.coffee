@@ -64,8 +64,6 @@ class RainThing
     @height = 1160
     @californication()
 
-
-
     # @usaify()
     # @refugeeChart()
     # @derpyCal()
@@ -120,12 +118,12 @@ class RainThing
         id: item.id.trim()
         name: item.name.trim()
         precipBuckets:
-          oneHour: parseFloat(item.precip[0].trim())
-          twoHour: parseFloat(item.precip[1].trim())
-          threeHour: parseFloat(item.precip[2].trim())
-          sixHour: parseFloat(item.precip[3].trim())
-          twelveHour: parseFloat(item.precip[4].trim())
-          daily: parseFloat(item.precip[5].trim())
+          oneHour: parseFloat(item.precipValues.oneHour.trim())
+          twoHour: parseFloat(item.precipValues.twoHour.trim())
+          threeHour: parseFloat(item.precipValues.threeHour.trim())
+          sixHour: parseFloat(item.precipValues.sixHour.trim())
+          twelveHour: parseFloat(item.precipValues.twelveHour.trim())
+          daily: parseFloat(item.precipValues.daily.trim())
 
       precipModel.push(stationData)
 
@@ -136,7 +134,11 @@ class RainThing
 
     d3.json 'data/USA-california.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
-        d3.json 'data/precip-data.json', (precipData) =>
+        $.ajax
+          url: "http://localhost:4000/rain.js"
+          jsonp: "callback"
+          dataType: "jsonp"
+        .then (precipData) =>
           stationData = @processPrecip(precipData)
 
           commonSet = []
@@ -153,8 +155,8 @@ class RainThing
                 if amt != 0 && !isNaN(amt)
                   debugger
 
-          finalCoords = commonSet
-          # finalCoords = stationCoords  # Either way can work
+          # finalCoords = commonSet
+          finalCoords = stationCoords  # Either way can work
 
           fillRed = d3.scale.linear()
             .domain([0, 10000])

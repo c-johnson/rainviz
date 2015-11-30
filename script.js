@@ -70,12 +70,12 @@ RainThing = (function() {
         id: item.id.trim(),
         name: item.name.trim(),
         precipBuckets: {
-          oneHour: parseFloat(item.precip[0].trim()),
-          twoHour: parseFloat(item.precip[1].trim()),
-          threeHour: parseFloat(item.precip[2].trim()),
-          sixHour: parseFloat(item.precip[3].trim()),
-          twelveHour: parseFloat(item.precip[4].trim()),
-          daily: parseFloat(item.precip[5].trim())
+          oneHour: parseFloat(item.precipValues.oneHour.trim()),
+          twoHour: parseFloat(item.precipValues.twoHour.trim()),
+          threeHour: parseFloat(item.precipValues.threeHour.trim()),
+          sixHour: parseFloat(item.precipValues.sixHour.trim()),
+          twelveHour: parseFloat(item.precipValues.twelveHour.trim()),
+          daily: parseFloat(item.precipValues.daily.trim())
         }
       };
       return precipModel.push(stationData);
@@ -89,7 +89,11 @@ RainThing = (function() {
     return d3.json('data/USA-california.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
-          return d3.json('data/precip-data.json', function(precipData) {
+          return $.ajax({
+            url: "http://localhost:4000/rain.js",
+            jsonp: "callback",
+            dataType: "jsonp"
+          }).then(function(precipData) {
             var caliLineString, commonSet, fillBlue, fillRed, finalCoords, geoStations, projection, self, stationCoordinates, stationData, usaPath, voronoi;
             stationData = _this.processPrecip(precipData);
             commonSet = [];
@@ -121,7 +125,7 @@ RainThing = (function() {
               }
               return results;
             });
-            finalCoords = commonSet;
+            finalCoords = stationCoords;
             fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
             fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
             projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
