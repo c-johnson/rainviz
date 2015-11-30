@@ -79,7 +79,7 @@ class RainThing
     d3.json 'data/USA-cali.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
         $.ajax
-          url: "http://localhost:4000/rain.js"
+          url: "http://cjohnson.io/rain.js"
           jsonp: "callback"
           dataType: "jsonp"
         .then (precipData) =>
@@ -96,7 +96,7 @@ class RainThing
           finalCoords = stationCoords  # Either way can work
 
           fillBlue = d3.scale.linear()
-            .domain([0, 5])
+            .domain([0, 10])
             .range(["#fff", "#00f"])
 
           projection = d3.geo.albersUsa()

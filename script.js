@@ -90,7 +90,7 @@ RainThing = (function() {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
           return $.ajax({
-            url: "http://localhost:4000/rain.js",
+            url: "http://cjohnson.io/rain.js",
             jsonp: "callback",
             dataType: "jsonp"
           }).then(function(precipData) {
@@ -106,7 +106,7 @@ RainThing = (function() {
               });
             });
             finalCoords = stationCoords;
-            fillBlue = d3.scale.linear().domain([0, 5]).range(["#fff", "#00f"]);
+            fillBlue = d3.scale.linear().domain([0, 10]).range(["#fff", "#00f"]);
             projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
             caliLineString = _this.projectLineString(geoCali, projection);
             voronoi = d3.geom.voronoi();
