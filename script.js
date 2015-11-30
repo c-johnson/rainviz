@@ -4,7 +4,7 @@ var CanvasDrawer, GeoFeature, GeoPolygon, RainThing, thing,
 window.noop = function() {};
 
 window.polygon = function(d) {
-  return "M" + d.join("L") + "Z";
+  return "M" + d.border.join("L") + "Z";
 };
 
 RainThing = (function() {
@@ -94,50 +94,26 @@ RainThing = (function() {
             jsonp: "callback",
             dataType: "jsonp"
           }).then(function(precipData) {
-            var caliLineString, commonSet, fillBlue, fillRed, finalCoords, geoStations, projection, self, stationCoordinates, stationData, usaPath, voronoi;
+            var caliLineString, commonSet, fillBlue, finalCoords, geoStations, projection, projectionResult, self, stationData, usaPath, voronoi, voronoiData, voronoiResult;
             stationData = _this.processPrecip(precipData);
             commonSet = [];
             stationData.forEach(function(item) {
               return stationCoords.forEach(function(sCoord) {
-                if (item.id === sCoord.name) {
+                if (item.id === sCoord.id) {
+                  _.extend(sCoord, item);
                   return commonSet.push(_.extend({}, item, sCoord));
                 }
               });
             });
-            commonSet.forEach(function(station) {
-              var amt, bucket, k, len, ref, results;
-              ref = station.precipBuckets;
-              results = [];
-              for (k = 0, len = ref.length; k < len; k++) {
-                bucket = ref[k];
-                if (station.precipBuckets.hasOwnProperty(bucket)) {
-                  amt = station.precipBuckets[bucket];
-                  if (amt !== 0 && !isNaN(amt)) {
-                    results.push((function() {
-                      debugger;
-                    })());
-                  } else {
-                    results.push(void 0);
-                  }
-                } else {
-                  results.push(void 0);
-                }
-              }
-              return results;
-            });
             finalCoords = stationCoords;
-            fillRed = d3.scale.linear().domain([0, 10000]).range(["#fff", "#f00"]);
-            fillBlue = d3.scale.linear().domain([0, 10000]).range(["#fff", "#00f"]);
+            fillBlue = d3.scale.linear().domain([0, 5]).range(["#fff", "#00f"]);
             projection = d3.geo.albersUsa().scale(3500).translate([1600, 400]);
-            stationCoordinates = finalCoords.map(function(d) {
-              return [+d.long, +d.lat];
-            });
             caliLineString = _this.projectLineString(geoCali, projection);
             voronoi = d3.geom.voronoi();
             geoStations = new GeoFeature;
             _.each(finalCoords, function(station) {
               var coords, stationId;
-              stationId = "station-" + station.name;
+              stationId = "station-" + station.id;
               coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))];
               return geoStations.features.push(_this.makePoint(stationId, coords));
             });
@@ -147,15 +123,31 @@ RainThing = (function() {
               return "subunit-" + d.properties.NAME;
             }).attr("d", usaPath);
             self = _this;
-            return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoi(stationCoordinates.map(projection)).map(function(d) {
-              return d3.geom.polygon(d).clip(caliLineString.slice());
-            })).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
-              d.initialArea = self.randomizeArea(d, false);
-              return fillBlue(d.initialArea);
+            projectionResult = finalCoords.map(function(coord) {
+              return projection([+coord.long, +coord.lat]);
+            });
+            voronoiResult = voronoi(projectionResult);
+            voronoiData = voronoiResult.map(function(vertices, index) {
+              var voronoiBorder;
+              voronoiBorder = d3.geom.polygon(vertices).clip(caliLineString.slice());
+              return {
+                id: finalCoords[index].id,
+                name: finalCoords[index].name,
+                precip: finalCoords[index].precipBuckets,
+                border: voronoiBorder
+              };
+            });
+            return svg.append("g").attr("class", "land").selectAll(".voronoi").data(voronoiData).enter().append("path").attr("class", "voronoi").style("fill", function(d) {
+              var precipFactor;
+              precipFactor = 5;
+              d.initialColor = d.precip != null ? fillBlue(.2 + (d.precip.daily * precipFactor)) : fillBlue(.2);
+              return d.initialColor;
             }).attr("d", polygon).on('mouseenter', function(d) {
-              return this.style.fill = fillBlue(self.randomizeArea(d, true));
+              var precipFactor;
+              precipFactor = 15;
+              return this.style.fill = d.precip != null ? fillBlue(.2 + (d.precip.daily * precipFactor)) : fillBlue(.2);
             }).on('mouseleave', function(d) {
-              return this.style.fill = fillBlue(d.initialArea);
+              return this.style.fill = d.initialColor;
             });
           });
         });

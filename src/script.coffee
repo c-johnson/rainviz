@@ -56,7 +56,7 @@
 
 window.noop = ->
 window.polygon = (d) ->
-  return "M" + d.join("L") + "Z"
+  return "M" + d.border.join("L") + "Z"
 
 class RainThing
   constructor: () ->
@@ -145,39 +145,27 @@ class RainThing
 
           stationData.forEach (item) ->
             stationCoords.forEach (sCoord) ->
-              if item.id == sCoord.name
+              if item.id == sCoord.id
+                _.extend sCoord, item
                 commonSet.push(_.extend({}, item, sCoord))
 
-          commonSet.forEach (station) ->
-            for bucket in station.precipBuckets
-              if station.precipBuckets.hasOwnProperty(bucket)
-                amt = station.precipBuckets[bucket]
-                if amt != 0 && !isNaN(amt)
-                  debugger
-
-          # finalCoords = commonSet
           finalCoords = stationCoords  # Either way can work
 
-          fillRed = d3.scale.linear()
-            .domain([0, 10000])
-            .range(["#fff", "#f00"])
-
           fillBlue = d3.scale.linear()
-            .domain([0, 10000])
+            .domain([0, 5])
             .range(["#fff", "#00f"])
 
           projection = d3.geo.albersUsa()
             .scale(3500)
             .translate([1600, 400])
 
-          stationCoordinates = finalCoords.map (d) -> return [+d.long, +d.lat]
           caliLineString = @projectLineString(geoCali, projection)
           voronoi = d3.geom.voronoi()
 
           geoStations = new GeoFeature
 
           _.each finalCoords, (station) =>
-            stationId = "station-" + station.name
+            stationId = "station-" + station.id
             coords = [parseFloat(parseFloat(station.long).toFixed(2)), parseFloat(parseFloat(station.lat).toFixed(2))]
             geoStations.features.push(@makePoint(stationId, coords))
 
@@ -195,26 +183,33 @@ class RainThing
               .attr("d", usaPath)
 
           self = @
+          projectionResult = finalCoords.map (coord) -> projection([+coord.long, +coord.lat])
+          voronoiResult = voronoi(projectionResult)
+          voronoiData = voronoiResult.map (vertices, index) ->
+            voronoiBorder = d3.geom.polygon(vertices).clip(caliLineString.slice())
+            return {
+              id: finalCoords[index].id
+              name: finalCoords[index].name
+              precip: finalCoords[index].precipBuckets
+              border: voronoiBorder
+            }
 
           svg.append("g")
               .attr("class", "land")
             .selectAll(".voronoi")
-              .data(voronoi(stationCoordinates.map(projection)).map( (d) ->
-                # Each voronoi region is a convex polygon, therefore we can use
-                # d3.geom.polygon.clip, treating each regino as a clip region, with the
-                # projected “exterior” as a subject polygon.
-                return d3.geom.polygon(d).clip(caliLineString.slice())
-              ))
+              .data(voronoiData)
             .enter().append("path")
               .attr("class", "voronoi")
               .style "fill", (d) ->
-                d.initialArea = self.randomizeArea(d,false)
-                return fillBlue(d.initialArea)
+                precipFactor = 5
+                d.initialColor = if d.precip? then fillBlue(.2 + (d.precip.daily * precipFactor)) else fillBlue(.2)
+                return d.initialColor
               .attr("d", polygon)
               .on 'mouseenter', (d) ->
-                this.style.fill = fillBlue(self.randomizeArea(d,true))
+                precipFactor = 15
+                this.style.fill = if d.precip? then fillBlue(.2 + (d.precip.daily * precipFactor)) else fillBlue(.2)
               .on 'mouseleave', (d) ->
-                this.style.fill = fillBlue(d.initialArea)
+                this.style.fill = d.initialColor
 
   usaify: () ->
     svg = @makeDisplay("svg")
