@@ -63,6 +63,9 @@ class RainThing
     @width = 960
     @height = 1160
     @californication()
+
+
+
     # @usaify()
     # @refugeeChart()
     # @derpyCal()
