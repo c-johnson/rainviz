@@ -86,7 +86,7 @@ RainThing = (function() {
   RainThing.prototype.californication = function() {
     var svg;
     svg = this.makeDisplay("svg");
-    return d3.json('data/USA-california.json', (function(_this) {
+    return d3.json('data/USA-cali.json', (function(_this) {
       return function(geoCali) {
         return d3.csv('data/station-coords.csv', function(stationCoords) {
           return $.ajax({
@@ -197,7 +197,7 @@ RainThing = (function() {
   };
 
   RainThing.prototype.refugeeChart = function() {
-    d3.csv('data/chart.csv', function(data) {
+    d3.csv('data/refugee-chart.csv', function(data) {
       var div, refugeeMax, refugeeMin;
       refugeeMax = data[data.length - 1].numRefugees;
       refugeeMin = data[0].numRefugees;

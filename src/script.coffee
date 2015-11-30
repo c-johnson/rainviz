@@ -1,59 +1,3 @@
-# FIRST STEP:  Downlaod station data
-
-# Station sniping code
-# First, go to http://wrcc.dri.edu/csc/scenic/data/station_finder/
-# Select the data you'd like to copy in the table, and then in chrome dev tools:
-
-# THE CODE:
-
-# var endResult = "";
-#
-# $('#station_list tr').each(function(index, trdom) {
-#
-#   var items = [];
-#   var firstChild = $(trdom).find('td:nth-child(3)').text();
-#   stationNames.push(firstChild);
-#   var lat = $(trdom).find('td:nth-child(4)').text();
-#   var long = $(trdom).find('td:nth-child(5)').text();
-#   items.push([firstChild, lat, long])
-#   var result = items.join(",")
-#   endResult += result + "\n"
-# });
-#
-# console.log(endResult);
-# copy(endResult);
-
-# SECOND STEP:  Get current data
-#  http://www.cnrfc.noaa.gov/rainfall_data.php
-#  http://www.wrh.noaa.gov/cnrfc/rsa_getprod.php?prod=RNORR5RSA&wfo=cnrfc&version=0
-#     - or http://www.cnrfc.noaa.gov/awipsProducts/RNORR5RSA.php
-
-# THE CODE:
-
-# var delims = [":", ".", "$", ""];
-#
-# precipData = [];
-#
-# var arr = $('.center-content pre').text().split('\n');
-# arr.splice(0, 3);
-# arr = arr.filter(function(item) { return delims.indexOf(item.charAt(0)) === -1 });
-# arr.map(function(item) {
-#   console.log(JSON.stringify(item));
-#   var parts = item.split(" : ");
-#   var id = parts[0];
-#   var name = parts[1];
-#   var rawPrecip = parts[2];
-#   precipBuckets = rawPrecip.split("/ ");
-#   var precipRow = {
-#     id: id,
-#     name: name,
-#     precip: precipBuckets
-#   };
-#   precipData.push(precipRow);
-#   // console.log("id = " + id + "\nname = " + name + "\nprecip = " + JSON.stringify(precipBuckets))
-# });
-# copy(precipData);
-
 window.noop = ->
 window.polygon = (d) ->
   return "M" + d.border.join("L") + "Z"
@@ -132,7 +76,7 @@ class RainThing
   californication: () ->
     svg = @makeDisplay("svg")
 
-    d3.json 'data/USA-california.json', (geoCali) =>
+    d3.json 'data/USA-cali.json', (geoCali) =>
       d3.csv 'data/station-coords.csv', (stationCoords) =>
         $.ajax
           url: "http://localhost:4000/rain.js"
@@ -261,7 +205,7 @@ class RainThing
       drawer.drawCanvasThing(960, 500, gJson.bbox, gJson, context)
 
   refugeeChart: () ->
-    d3.csv 'data/chart.csv', (data) ->
+    d3.csv 'data/refugee-chart.csv', (data) ->
       refugeeMax = data[data.length - 1].numRefugees
       refugeeMin = data[0].numRefugees
       div = d3.select('.the-data').append('div').attr('class', 'tooltip').style('opacity', 0)
